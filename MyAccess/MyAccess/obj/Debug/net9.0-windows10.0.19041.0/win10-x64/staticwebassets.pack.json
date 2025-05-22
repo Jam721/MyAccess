@@ -1,0 +1,53 @@
+{
+  "Files": [
+    {
+      "Id": "E:\\MyAccess\\MyAccess\\MyAccess\\Components\\Pages\\Access.razor.js",
+      "PackagePath": "staticwebassets\\Components\\Pages\\Access.razor.js"
+    },
+    {
+      "Id": "E:\\MyAccess\\MyAccess\\MyAccess\\Components\\Pages\\Db.razor.js",
+      "PackagePath": "staticwebassets\\Components\\Pages\\Db.razor.js"
+    },
+    {
+      "Id": "E:\\MyAccess\\MyAccess\\MyAccess\\obj\\Debug\\net9.0-windows10.0.19041.0\\win10-x64\\scopedcss\\bundle\\MyAccess.styles.css",
+      "PackagePath": "staticwebassets\\MyAccess.styles.css"
+    },
+    {
+      "Id": "E:\\MyAccess\\MyAccess\\MyAccess\\wwwroot\\css\\app.css",
+      "PackagePath": "staticwebassets\\css\\app.css"
+    },
+    {
+      "Id": "E:\\MyAccess\\MyAccess\\MyAccess\\wwwroot\\css\\bootstrap\\bootstrap.min.css",
+      "PackagePath": "staticwebassets\\css\\bootstrap\\bootstrap.min.css"
+    },
+    {
+      "Id": "E:\\MyAccess\\MyAccess\\MyAccess\\wwwroot\\css\\bootstrap\\bootstrap.min.css.map",
+      "PackagePath": "staticwebassets\\css\\bootstrap\\bootstrap.min.css.map"
+    },
+    {
+      "Id": "E:\\MyAccess\\MyAccess\\MyAccess\\wwwroot\\index.html",
+      "PackagePath": "staticwebassets\\index.html"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0-windows10.0.19041.0\\win10-x64\\staticwebassets\\msbuild.MyAccess.Microsoft.AspNetCore.StaticWebAssetEndpoints.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssetEndpoints.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0-windows10.0.19041.0\\win10-x64\\staticwebassets\\msbuild.MyAccess.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0-windows10.0.19041.0\\win10-x64\\staticwebassets\\msbuild.build.MyAccess.props",
+      "PackagePath": "build\\MyAccess.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0-windows10.0.19041.0\\win10-x64\\staticwebassets\\msbuild.buildMultiTargeting.MyAccess.props",
+      "PackagePath": "buildMultiTargeting\\MyAccess.props"
+    },
+    {
+      "Id": "obj\\Debug\\net9.0-windows10.0.19041.0\\win10-x64\\staticwebassets\\msbuild.buildTransitive.MyAccess.props",
+      "PackagePath": "buildTransitive\\MyAccess.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

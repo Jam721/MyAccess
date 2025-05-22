@@ -1,0 +1,308 @@
+﻿@page "/database/{DbName}"
+@inherits ComponentBase
+@namespace MyAccess.Pages
+@using MyAccess.Services
+@inject DatabaseService DbService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<div class="db-container">
+    @if (tables == null)
+    {
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Загрузка данных...</p>
+        </div>
+    }
+    else
+    {
+        <div class="db-header">
+            <div class="header-left">
+                <h1>@DbName</h1>
+                <div class="tables-count">Таблиц: @tables.Count</div>
+            </div>
+            <div class="header-right">
+                <button class="create-table-btn" @onclick="ShowCreateTableDialog">
+                    + Новая таблица
+                </button>
+                <button class="back-button" @onclick="NavigateToHome">← Назад</button>
+            </div>
+        </div>
+
+        <div class="tables-grid">
+            @foreach (var table in tables)
+            {
+                <div class="table-card">
+                    <div class="table-actions">
+                        <button class="icon-btn edit-btn" @onclick="() => ShowEditTableDialog(table)">
+                            ✎
+                        </button>
+                        <button class="icon-btn delete-btn" @onclick="() => DeleteTable(table)">
+                            ✕
+                        </button>
+                    </div>
+                    <div class="table-content" @onclick="() => ShowTableData(table)">
+                        <div class="table-icon">📑</div>
+                        <div class="table-name">@table</div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (showTableDialog)
+        {
+            <div class="dialog-overlay">
+                <div class="dialog-content">
+                    <h3>@(isEditing ? "Редактирование таблицы" : "Новая таблица")</h3>
+                    <div class="form-group">
+                        <label>Имя таблицы:</label>
+                        <input @bind="newTableName" disabled="@isEditing" />
+                    </div>
+
+                    <div class="columns-header">
+                        <span>Колонки</span>
+                        <button class="add-column-btn" @onclick="AddNewColumn">+ Добавить</button>
+                    </div>
+
+                    <div class="columns-list">
+                        @foreach (var column in columns)
+                        {
+                            <div class="column-item">
+                                <input @bind="column.Name" placeholder="Имя колонки" class="column-input" />
+                                <select @bind="column.Type" class="type-select">
+                                    <option value="integer">INTEGER</option>
+                                    <option value="text">TEXT</option>
+                                    <option value="varchar(255)">VARCHAR(255)</option>
+                                    <option value="boolean">BOOLEAN</option>
+                                    <option value="date">DATE</option>
+                                    <option value="timestamp">TIMESTAMP</option>
+                                </select>
+                                <label class="pk-check">
+                                    <input type="checkbox" @bind="column.IsPrimaryKey" />
+                                    PK
+                                </label>
+                                <button class="remove-column-btn" @onclick="() => RemoveColumn(column)">✕</button>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="error-message">@errorMessage</div>
+                    }
+
+                    <div class="dialog-actions">
+                        <button class="primary-btn" @onclick="SaveTable">
+                            @(isEditing ? "Сохранить" : "Создать")
+                        </button>
+                        <button class="cancel-btn" @onclick="CloseTableDialog">Отмена</button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (selectedTable != null)
+        {
+            <div class="table-data-container">
+                <div class="table-data-header">
+                    <h2>@selectedTable</h2>
+                    <button class="close-button" @onclick="CloseTable">✕</button>
+                </div>
+
+                @if (rows == null)
+                {
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Загрузка записей...</p>
+                    </div>
+                }
+                else if (rows.Count == 0)
+                {
+                    <div class="empty-table">Таблица пуста</div>
+                }
+                else
+                {
+                    <div class="data-table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    @foreach (var key in rows.First().Keys)
+                                    {
+                                        <th>@key</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in rows)
+                                {
+                                    <tr>
+                                        @foreach (var value in row.Values)
+                                        {
+                                            <td>@value?.ToString()</td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string DbName { get; set; }
+
+    private List<string> tables;
+    private string selectedTable;
+    private List<Dictionary<string, object>> rows;
+    private bool showTableDialog;
+    private bool isEditing;
+    private string newTableName;
+    private List<DatabaseService.ColumnDefinition> columns = new();
+    private string originalTableName;
+    private string errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTables();
+    }
+
+    private async Task LoadTables()
+    {
+        try
+        {
+            tables = await DbService.GetTablesAsync(DbName);
+        }
+        catch
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+
+    private async Task ShowTableData(string tableName)
+    {
+        selectedTable = tableName;
+        rows = null;
+        rows = await DbService.GetTableDataAsync(DbName, tableName);
+    }
+
+    private void CloseTable()
+    {
+        selectedTable = null;
+        rows = null;
+    }
+
+    private void NavigateToHome()
+    {
+        Navigation.NavigateTo("/");
+    }
+
+    private void ShowCreateTableDialog()
+    {
+        isEditing = false;
+        newTableName = "";
+        columns.Clear();
+        errorMessage = "";
+        showTableDialog = true;
+    }
+
+    private async Task ShowEditTableDialog(string tableName)
+    {
+        try
+        {
+            isEditing = true;
+            originalTableName = tableName;
+            newTableName = tableName;
+            columns = await DbService.GetTableColumnsAsync(DbName, tableName);
+            errorMessage = "";
+            showTableDialog = true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка загрузки структуры: {ex.Message}";
+        }
+    }
+
+    private void AddNewColumn()
+    {
+        columns.Add(new DatabaseService.ColumnDefinition 
+        { 
+            Name = $"column{columns.Count + 1}", 
+            Type = "text" 
+        });
+    }
+
+    private void RemoveColumn(DatabaseService.ColumnDefinition column)
+    {
+        columns.Remove(column);
+    }
+
+    private async Task SaveTable()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(newTableName))
+            {
+                errorMessage = "Введите имя таблицы";
+                return;
+            }
+
+            if (columns.Count == 0)
+            {
+                errorMessage = "Добавьте хотя бы одну колонку";
+                return;
+            }
+
+            if (columns.Count(c => c.IsPrimaryKey) > 1)
+            {
+                errorMessage = "Может быть только один первичный ключ";
+                return;
+            }
+
+            if (isEditing)
+            {
+                await DbService.UpdateTableAsync(DbName, originalTableName, newTableName, columns);
+            }
+            else
+            {
+                await DbService.CreateTableAsync(DbName, newTableName, columns);
+            }
+
+            await LoadTables();
+            showTableDialog = false;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private async Task DeleteTable(string tableName)
+    {
+        bool confirm = await JSRuntime.InvokeAsync<bool>("confirm", $"Удалить таблицу '{tableName}'?");
+        if (confirm)
+        {
+            try
+            {
+                await DbService.DeleteTableAsync(DbName, tableName);
+                await LoadTables();
+                if (selectedTable == tableName) CloseTable();
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Ошибка удаления: {ex.Message}";
+                StateHasChanged();
+            }
+        }
+    }
+
+    private void CloseTableDialog()
+    {
+        showTableDialog = false;
+        columns.Clear();
+        errorMessage = "";
+    }
+}
