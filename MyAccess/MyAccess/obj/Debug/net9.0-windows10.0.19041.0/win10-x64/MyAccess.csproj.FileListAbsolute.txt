@@ -548,13 +548,11 @@ E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Abo
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\Components\Pages\Access.razor.js
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\Components\Pages\Db.razor.js
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\css\app.css.gz
-E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\MyAccess.72ie0x77qm.bundle.scp.css.gz
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\css\bootstrap\bootstrap.min.css.map.gz
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\css\bootstrap\bootstrap.min.css.gz
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\index.html.gz
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\Components\Pages\Access.razor.js.gz
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\css\app.css.br
-E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\MyAccess.72ie0x77qm.bundle.scp.css.br
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\css\bootstrap\bootstrap.min.css.map.br
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\css\bootstrap\bootstrap.min.css.br
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\index.html.br
@@ -564,7 +562,6 @@ E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\www
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\MyAccess.styles.css.gz
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\Components\Pages\Db.razor.js.gz
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\MyAccess.styles.css
-E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\MyAccess.72ie0x77qm.bundle.scp.css
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\css\app.css
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\css\bootstrap\bootstrap.min.css
 E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\css\bootstrap\bootstrap.min.css.map
@@ -970,8 +967,6 @@ E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\com
 E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\g7puy050sc-dfdaskgryo.gz
 E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\izarj11215-kt5s0qnsmk.gz
 E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\v8zt1eui4z-059mop8y0y.gz
-E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\pyn7abs1v2-72ie0x77qm.gz
-E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\8sjca86tfr-72ie0x77qm.gz
 E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\staticwebassets.build.json
 E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\staticwebassets.development.json
 E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\staticwebassets.build.endpoints.json
@@ -983,8 +978,6 @@ E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\sta
 E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\staticwebassets.pack.json
 E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\publish\izarj11215-kt5s0qnsmk.br
 E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\publish\v8zt1eui4z-059mop8y0y.br
-E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\publish\pyn7abs1v2-72ie0x77qm.br
-E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\publish\8sjca86tfr-72ie0x77qm.br
 E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\publish\8noheq03bl-e5tk7yf482.br
 E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\publish\fd7sqqmike-6gzpyzhau4.br
 E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\publish\bdh44l23cv-8inm30yfxf.br
@@ -1088,3 +1081,13 @@ E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\pri
 E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\qualifiers.txt
 E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\qualifiers.txt.intermediate
 E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\MultipleQualifiersPerDimensionFound.txt
+E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\scopedcss\Components\Pages\TableData.razor.rz.scp.css
+E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\Components\Pages\TableData.razor.css
+E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\MyAccess.sourcelink.json
+E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\MyAccess.xfyd9uqutp.bundle.scp.css.gz
+E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\MyAccess.xfyd9uqutp.bundle.scp.css.br
+E:\MyAccess\MyAccess\MyAccess\bin\Debug\net9.0-windows10.0.19041.0\win10-x64\wwwroot\MyAccess.xfyd9uqutp.bundle.scp.css
+E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\pyn7abs1v2-xfyd9uqutp.gz
+E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\8sjca86tfr-xfyd9uqutp.gz
+E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\publish\pyn7abs1v2-xfyd9uqutp.br
+E:\MyAccess\MyAccess\MyAccess\obj\Debug\net9.0-windows10.0.19041.0\win10-x64\compressed\publish\8sjca86tfr-xfyd9uqutp.br

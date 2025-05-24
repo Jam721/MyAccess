@@ -1,0 +1,343 @@
+﻿@page "/database/{DbName}/table/{TableName}"
+@inherits ComponentBase
+@namespace MyAccess.Pages
+@using MyAccess.Services
+@inject DatabaseService DbService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<div class="table-data-container">
+    <div class="table-data-header">
+        <h2>@TableName</h2>
+        <div class="header-actions">
+            <button class="add-record-btn" @onclick="ShowAddRecordDialog">+ Добавить запись</button>
+            <button class="close-button" @onclick="NavigateBack">✕</button>
+        </div>
+    </div>
+
+    @if (rows == null)
+    {
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Загрузка записей...</p>
+        </div>
+    }
+    else if (rows.Count == 0)
+    {
+        <div class="empty-table">Таблица пуста</div>
+    }
+    else
+    {
+        <div class="data-table-wrapper">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    @foreach (var key in rows.First().Keys)
+                    {
+                        <th>@key</th>
+                    }
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in rows)
+                {
+                    <tr>
+                        @foreach (var value in row.Values)
+                        {
+                            <td>@value?.ToString()</td>
+                        }
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (showAddDialog)
+    {
+        <div class="dialog-overlay">
+            <div class="dialog-content">
+                <h3>Новая запись</h3>
+                <div class="form-fields">
+                    @foreach (var column in tableColumns.Where(c => !c.IsPrimaryKey))
+                    {
+                        var pgType = MapPgType(column.Type);
+                        var columnName = column.Name; // Локальная переменная для замыкания
+
+                        <div class="form-group">
+                            <label>@column.Name (@pgType)</label>
+
+                            @switch(pgType)
+                            {
+                                case "integer":
+                                    <input type="number"
+                                           value="@GetIntegerValue(columnName)"
+                                           @onchange="@(e => SetIntegerValue(columnName, e.Value))"
+                                           class="form-control"
+                                           step="1" />
+                                    break;
+
+                                case "numeric":
+                                    <input type="number"
+                                           value="@GetDecimalValue(columnName)"
+                                           @onchange="@(e => SetDecimalValue(columnName, e.Value))"
+                                           class="form-control"
+                                           step="0.01" />
+                                    break;
+
+                                case "timestamp":
+                                case "date":
+                                    <input type="datetime-local"
+                                           value="@GetDateTimeValue(columnName, pgType)?.ToString("yyyy-MM-ddTHH:mm")"
+                                           @onchange="@(e => SetDateTimeValue(columnName, e.Value, pgType))"
+                                           class="form-control" />
+                                    break;
+
+                                case "boolean":
+                                    <input type="checkbox"
+                                           checked="@GetBooleanValue(columnName)"
+                                           @onchange="@(e => SetBooleanValue(columnName, e.Value))"
+                                           class="form-check" />
+                                    break;
+
+                                default:
+                                    <input type="text"
+                                           value="@GetStringValue(columnName)"
+                                           @oninput="@(e => SetStringValue(columnName, e.Value))"
+                                           class="form-control" />
+                                    break;
+                            }
+                        </div>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="error-message">@errorMessage</div>
+                }
+
+                <div class="dialog-actions">
+                    <button class="primary-btn" @onclick="AddNewRecord">Сохранить</button>
+                    <button class="cancel-btn" @onclick="CloseAddDialog">Отмена</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string DbName { get; set; }
+
+    [Parameter]
+    public string TableName { get; set; }
+
+    private List<Dictionary<string, object>> rows;
+    private List<DatabaseService.ColumnDefinition> tableColumns;
+    private bool showAddDialog;
+    private Dictionary<string, object> newRecord = new();
+    private string errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadTableData();
+        await LoadTableStructure();
+    }
+
+    private async Task LoadTableStructure()
+    {
+        tableColumns = await DbService.GetTableColumnsAsync(DbName, TableName);
+    }
+
+    private async Task LoadTableData()
+    {
+        rows = await DbService.GetTableDataAsync(DbName, TableName);
+    }
+
+    private void ShowAddRecordDialog()
+    {
+        newRecord.Clear();
+        errorMessage = "";
+        showAddDialog = true;
+    }
+
+    private void CloseAddDialog()
+    {
+        showAddDialog = false;
+        newRecord.Clear();
+        errorMessage = "";
+    }
+
+    private void NavigateBack()
+    {
+        Navigation.NavigateTo($"/database/{DbName}");
+    }
+    
+    private async Task AddNewRecord()
+    {
+        try
+        {
+            var convertedRecord = new Dictionary<string, object>();
+            foreach (var kvp in newRecord)
+            {
+                var column = tableColumns.First(c => c.Name == kvp.Key);
+                convertedRecord[kvp.Key] = ConvertValue(kvp.Value, column.Type);
+            }
+
+            await DbService.InsertRecordAsync(DbName, TableName, convertedRecord);
+            await LoadTableData();
+            showAddDialog = false;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка добавления записи: {ex.Message}";
+        }
+    }
+
+    private object ConvertValue(object value, string pgType)
+    {
+        if (value == null) return DBNull.Value;
+
+        return MapPgType(pgType) switch
+        {
+            "integer" => Convert.ToInt32(value),
+            "numeric" => Convert.ToDecimal(value),
+            "boolean" => Convert.ToBoolean(value),
+            "timestamp" => DateTime.SpecifyKind((DateTime)value, DateTimeKind.Utc),
+            "date" => DateOnly.FromDateTime((DateTime)value),
+            _ => value.ToString()
+        };
+    }
+
+    private string MapPgType(string pgType)
+    {
+        return pgType.ToLower() switch
+        {
+            "int4" => "integer",
+            "numeric" => "numeric",
+            "varchar" => "text",
+            "text" => "text",
+            "bool" => "boolean",
+            "timestamp" => "timestamp",
+            "date" => "date",
+            _ => pgType
+        };
+    }
+    
+    private int GetIntegerValue(object value)
+    {
+        if (value is int i) return i;
+        if (value != null && int.TryParse(value.ToString(), out int result)) return result;
+        return 0;
+    }
+
+    private decimal GetDecimalValue(object value)
+    {
+        if (value is decimal d) return d;
+        if (value != null && decimal.TryParse(value.ToString(), out decimal result)) return result;
+        return 0m;
+    }
+
+    private DateTime GetDateTimeValue(object value, string pgType)
+    {
+        if (value is DateTime dt) return dt;
+        if (pgType == "date") return DateTime.Today;
+        return DateTime.Now;
+    }
+
+    private bool GetBooleanValue(object value)
+    {
+        if (value is bool b) return b;
+        if (value != null && bool.TryParse(value.ToString(), out bool result)) return result;
+        return false;
+    }
+
+    private string GetStringValue(object value)
+    {
+        return value?.ToString() ?? string.Empty;
+    }
+    
+        // Методы получения значений
+    private int GetIntegerValue(string columnName)
+    {
+        if (newRecord.TryGetValue(columnName, out var value))
+        {
+            if (value is int i) return i;
+            if (int.TryParse(value?.ToString(), out int result)) return result;
+        }
+        return 0;
+    }
+
+    private decimal GetDecimalValue(string columnName)
+    {
+        if (newRecord.TryGetValue(columnName, out var value))
+        {
+            if (value is decimal d) return d;
+            if (decimal.TryParse(value?.ToString(), out decimal result)) return result;
+        }
+        return 0m;
+    }
+
+    private DateTime? GetDateTimeValue(string columnName, string pgType)
+    {
+        if (newRecord.TryGetValue(columnName, out var value))
+        {
+            if (value is DateTime dt) return dt;
+            if (DateTime.TryParse(value?.ToString(), out DateTime result)) return result;
+        }
+        return pgType == "date" ? DateTime.Today : DateTime.Now;
+    }
+
+    private bool GetBooleanValue(string columnName)
+    {
+        if (newRecord.TryGetValue(columnName, out var value))
+        {
+            if (value is bool b) return b;
+            if (bool.TryParse(value?.ToString(), out bool result)) return result;
+        }
+        return false;
+    }
+
+    private string GetStringValue(string columnName)
+    {
+        return newRecord.TryGetValue(columnName, out var value) ? value?.ToString() ?? "" : "";
+    }
+
+    // Методы установки значений
+    private void SetIntegerValue(string columnName, object value)
+    {
+        if (int.TryParse(value?.ToString(), out int result))
+        {
+            newRecord[columnName] = result;
+        }
+    }
+
+    private void SetDecimalValue(string columnName, object value)
+    {
+        if (decimal.TryParse(value?.ToString(), out decimal result))
+        {
+            newRecord[columnName] = result;
+        }
+    }
+
+    private void SetDateTimeValue(string columnName, object value, string pgType)
+    {
+        if (DateTime.TryParse(value?.ToString(), out DateTime result))
+        {
+            newRecord[columnName] = pgType == "date" ? result.Date : result;
+        }
+    }
+
+    private void SetBooleanValue(string columnName, object value)
+    {
+        if (value is bool b)
+        {
+            newRecord[columnName] = b;
+        }
+    }
+
+    private void SetStringValue(string columnName, object value)
+    {
+        newRecord[columnName] = value?.ToString() ?? "";
+    }
+}

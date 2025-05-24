@@ -236,6 +236,28 @@ public class DatabaseService
             throw;
         }
     }
+    
+    public async Task InsertRecordAsync(string dbName, string tableName, Dictionary<string, object> record)
+    {
+        using var connection = new NpgsqlConnection(GetConnectionString(dbName));
+        await connection.OpenAsync();
+
+        var columns = string.Join(", ", record.Keys);
+        var parameters = string.Join(", ", record.Keys.Select((k, i) => $"@p{i}"));
+        
+        var query = $"INSERT INTO {tableName} ({columns}) VALUES ({parameters})";
+        
+        using var command = new NpgsqlCommand(query, connection);
+        
+        int i = 0;
+        foreach (var (key, value) in record)
+        {
+            command.Parameters.AddWithValue($"p{i}", value ?? DBNull.Value);
+            i++;
+        }
+        
+        await command.ExecuteNonQueryAsync();
+    }
 
     public class ColumnDefinition
     {

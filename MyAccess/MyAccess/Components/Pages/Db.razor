@@ -41,7 +41,8 @@
                             ✕
                         </button>
                     </div>
-                    <div class="table-content" @onclick="() => ShowTableData(table)">
+                    <div class="table-content cursor-pointer" 
+                         @onclick="() => NavigateToTable(table)">
                         <div class="table-icon">📑</div>
                         <div class="table-name">@table</div>
                     </div>
@@ -100,60 +101,12 @@
                 </div>
             </div>
         }
-
-        @if (selectedTable != null)
-        {
-            <div class="table-data-container">
-                <div class="table-data-header">
-                    <h2>@selectedTable</h2>
-                    <button class="close-button" @onclick="CloseTable">✕</button>
-                </div>
-
-                @if (rows == null)
-                {
-                    <div class="loading">
-                        <div class="spinner"></div>
-                        <p>Загрузка записей...</p>
-                    </div>
-                }
-                else if (rows.Count == 0)
-                {
-                    <div class="empty-table">Таблица пуста</div>
-                }
-                else
-                {
-                    <div class="data-table-wrapper">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    @foreach (var key in rows.First().Keys)
-                                    {
-                                        <th>@key</th>
-                                    }
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var row in rows)
-                                {
-                                    <tr>
-                                        @foreach (var value in row.Values)
-                                        {
-                                            <td>@value?.ToString()</td>
-                                        }
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
-            </div>
-        }
     }
 </div>
 
+
 @code {
-    [Parameter]
-    public string DbName { get; set; }
+    [Parameter] public string DbName { get; set; }
 
     private List<string> tables;
     private string selectedTable;
@@ -165,6 +118,12 @@
     private string originalTableName;
     private string errorMessage;
 
+    private void NavigateToTable(string tableName)
+    {
+        var encodedTable = System.Net.WebUtility.UrlEncode(tableName);
+        Navigation.NavigateTo($"/database/{DbName}/table/{encodedTable}");
+    }
+    
     protected override async Task OnInitializedAsync()
     {
         await LoadTables();
@@ -228,10 +187,10 @@
 
     private void AddNewColumn()
     {
-        columns.Add(new DatabaseService.ColumnDefinition 
-        { 
-            Name = $"column{columns.Count + 1}", 
-            Type = "text" 
+        columns.Add(new DatabaseService.ColumnDefinition
+        {
+            Name = $"column{columns.Count + 1}",
+            Type = "text"
         });
     }
 
@@ -305,4 +264,5 @@
         columns.Clear();
         errorMessage = "";
     }
+
 }

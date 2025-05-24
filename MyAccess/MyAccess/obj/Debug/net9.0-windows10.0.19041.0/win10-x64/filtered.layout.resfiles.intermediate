@@ -4,14 +4,15 @@ Components\Pages\Access.razor.css
 wwwroot\Components\Pages\Access.razor.js
 Components\Pages\Db.razor.css
 wwwroot\Components\Pages\Db.razor.js
+Components\Pages\TableData.razor.css
 wwwroot\css\app.css.gz
-wwwroot\MyAccess.72ie0x77qm.bundle.scp.css.gz
+wwwroot\MyAccess.xfyd9uqutp.bundle.scp.css.gz
 wwwroot\css\bootstrap\bootstrap.min.css.map.gz
 wwwroot\css\bootstrap\bootstrap.min.css.gz
 wwwroot\index.html.gz
 wwwroot\Components\Pages\Access.razor.js.gz
 wwwroot\css\app.css.br
-wwwroot\MyAccess.72ie0x77qm.bundle.scp.css.br
+wwwroot\MyAccess.xfyd9uqutp.bundle.scp.css.br
 wwwroot\css\bootstrap\bootstrap.min.css.map.br
 wwwroot\css\bootstrap\bootstrap.min.css.br
 wwwroot\index.html.br
@@ -78,7 +79,7 @@ splashSplashScreen.scale-150.png
 splashSplashScreen.scale-200.png
 splashSplashScreen.scale-400.png
 wwwroot\MyAccess.styles.css
-wwwroot\MyAccess.72ie0x77qm.bundle.scp.css
+wwwroot\MyAccess.xfyd9uqutp.bundle.scp.css
 AboutAssets.txt
 wwwroot\css\app.css
 wwwroot\css\bootstrap\bootstrap.min.css
