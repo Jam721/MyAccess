@@ -1,0 +1,114 @@
+﻿@page "/database/{DbName}/table/{TableName}/report/{ReportType}"
+@inherits ComponentBase
+@namespace MyAccess.Pages
+@using MyAccess.Services
+@using MyAccess.Components.Pages
+@inject DatabaseService DbService
+@inject NavigationManager Navigation
+
+<div class="report-container">
+    <div class="report-header">
+        <h2>Отчет: @TableName - @GetReportTypeName()</h2>
+        <div class="report-actions">
+            <button class="back-btn" @onclick="NavigateBack">← Назад</button>
+            <button class="print-btn" @onclick="PrintReport">🖨️ Печать</button>
+            <button class="export-btn" @onclick="ExportReport">📥 Экспорт</button>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Формирование отчета...</p>
+        </div>
+    }
+    else if (reportData == null || reportData.Count == 0)
+    {
+        <div class="empty-report">Нет данных для отчета</div>
+    }
+    else
+    {
+        @switch (ReportType)
+        {
+            case "Summary":
+                <SummaryReport Data="reportData" Columns="tableColumns" />
+                break;
+            case "Detailed":
+                <DetailedReport Data="reportData" Columns="tableColumns" />
+                break;
+            case "Chart":
+                <ChartReport Data="reportData" Columns="tableColumns" />
+                break;
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string DbName { get; set; }
+
+    [Parameter]
+    public string TableName { get; set; }
+
+    [Parameter]
+    public string ReportType { get; set; }
+
+    private List<Dictionary<string, object>> reportData;
+    private List<DatabaseService.ColumnDefinition> tableColumns;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReportData();
+    }
+
+    private async Task LoadReportData()
+    {
+        isLoading = true;
+        StateHasChanged();
+        
+        try
+        {
+            reportData = await DbService.GetTableDataAsync(DbName, TableName);
+            tableColumns = await DbService.GetTableColumnsAsync(DbName, TableName);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки данных: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetReportTypeName()
+    {
+        return ReportType switch
+        {
+            "Summary" => "Сводный отчет",
+            "Detailed" => "Детализированный отчет",
+            "Chart" => "Графический отчет",
+            _ => ReportType
+        };
+    }
+
+    private void NavigateBack()
+    {
+        Navigation.NavigateTo($"/database/{DbName}/table/{TableName}");
+    }
+
+    private void PrintReport()
+    {
+        // Логика печати отчета
+        Console.WriteLine("Печать отчета...");
+    }
+
+    private void ExportReport()
+    {
+        // Логика экспорта отчета
+        Console.WriteLine("Экспорт отчета...");
+    }
+}

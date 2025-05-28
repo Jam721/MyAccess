@@ -5,11 +5,35 @@ namespace MyAccess.Services;
 
 public class DatabaseService
 {
-    private string _baseConnectionString; // Без Database=
+    private string _baseConnectionString;
+    private AuthService _authService;
 
-    public DatabaseService(string baseConnectionString)
+    public DatabaseService(string baseConnectionString, AuthService authService)
     {
         _baseConnectionString = baseConnectionString;
+        _authService = authService;
+    }
+    
+    public void UpdateAuthService(AuthService authService)
+    {
+        _authService = authService;
+    }
+    
+    public static bool IsNumeric(string pgType)
+    {
+        return pgType.ToLower() switch
+        {
+            "int4" or "integer" or "numeric" or "float8" or "double precision" => true,
+            _ => false
+        };
+    }
+    
+    private void CheckAdminAccess()
+    {
+        if (_authService?.CurrentUser?.Role != "admin")
+        {
+            throw new UnauthorizedAccessException("Требуются права администратора");
+        }
     }
 
     private string GetConnectionString(string? dbName = null)
@@ -26,6 +50,8 @@ public class DatabaseService
 
     public async Task CreateDatabaseAsync(string dbName)
     {
+        CheckAdminAccess();
+        
         await using var connection = new NpgsqlConnection(GetConnectionString("postgres"));
         await connection.OpenAsync();
         
@@ -48,6 +74,8 @@ public class DatabaseService
     
     public async Task DropDatabaseAsync(string dbName)
     {
+        CheckAdminAccess();
+        
         await using var connection = new NpgsqlConnection(GetConnectionString("postgres"));
         await connection.OpenAsync();
 
@@ -103,14 +131,20 @@ public class DatabaseService
         return tables;
     }
 
-    public async Task<List<Dictionary<string, object>>> GetTableDataAsync(string databaseName, string tableName)
+    public async Task<List<Dictionary<string, object>>> GetTableDataAsync(
+        string databaseName, 
+        string tableName, 
+        int limit = 100) // Добавляем параметр лимита
     {
         var rows = new List<Dictionary<string, object>>();
         await using var conn = new NpgsqlConnection(GetConnectionString(databaseName));
         await conn.OpenAsync();
 
-        var query = $"SELECT * FROM \"{tableName}\"";
+        // Используем параметризованный запрос для безопасности
+        var query = $"SELECT * FROM \"{tableName}\" LIMIT @limit";
         await using var cmd = new NpgsqlCommand(query, conn);
+        cmd.Parameters.AddWithValue("limit", limit); // Добавляем параметр
+
         await using var reader = await cmd.ExecuteReaderAsync();
 
         while (await reader.ReadAsync())
@@ -128,28 +162,126 @@ public class DatabaseService
     
     public async Task CreateTableAsync(string databaseName, string tableName, List<ColumnDefinition> columns)
     {
+        CheckAdminAccess();
+        
         await using var conn = new NpgsqlConnection(GetConnectionString(databaseName));
         await conn.OpenAsync();
 
-        var columnDefinitions = string.Join(", ", 
-            columns.Select(c => $"\"{c.Name}\" {c.Type} {(c.IsPrimaryKey ? "PRIMARY KEY" : "")}"));
+        var columnDefs = new List<string>();
+        var foreignKeys = new List<string>();
 
+        foreach (var c in columns)
+        {
+            columnDefs.Add($"\"{c.Name}\" {c.Type} {(c.IsPrimaryKey ? "PRIMARY KEY" : "")}".Trim());
+
+            if (c.IsForeignKey && !string.IsNullOrWhiteSpace(c.ForeignTable) && !string.IsNullOrWhiteSpace(c.ForeignColumn))
+            {
+                foreignKeys.Add($"FOREIGN KEY (\"{c.Name}\") REFERENCES \"{c.ForeignTable}\"(\"{c.ForeignColumn}\")");
+            }
+        }
+
+        var allDefs = columnDefs.Concat(foreignKeys);
         var query = $@"
-            CREATE TABLE IF NOT EXISTS ""{tableName}"" (
-                {columnDefinitions}
-            )";
+        CREATE TABLE IF NOT EXISTS ""{tableName}"" (
+            {string.Join(", ", allDefs)}
+        )";
 
         await using var cmd = new NpgsqlCommand(query, conn);
         await cmd.ExecuteNonQueryAsync();
     }
 
+
+
     public async Task DeleteTableAsync(string databaseName, string tableName)
     {
+        CheckAdminAccess();
+        
         await using var conn = new NpgsqlConnection(GetConnectionString(databaseName));
         await conn.OpenAsync();
 
         var query = $@"DROP TABLE IF EXISTS ""{tableName}"" CASCADE";
         await using var cmd = new NpgsqlCommand(query, conn);
+        await cmd.ExecuteNonQueryAsync();
+    }
+    
+    public async Task UpdateRecordAsync(string dbName, string tableName, 
+    Dictionary<string, object> primaryKeys, 
+    Dictionary<string, object> updatedValues)
+    {
+        CheckAdminAccess();
+        
+        if (primaryKeys.Count == 0) 
+            throw new ArgumentException("Primary keys required for update");
+        if (updatedValues.Count == 0) 
+            throw new ArgumentException("Updated values cannot be empty");
+
+        await using var conn = new NpgsqlConnection(GetConnectionString(dbName));
+        await conn.OpenAsync();
+
+        // Генерация SET части с параметрами
+        var setParams = updatedValues.Keys
+            .Select((k, i) => $@"""{k}"" = @set_{i}")
+            .ToList();
+        
+        // Генерация WHERE части с параметрами
+        var whereParams = primaryKeys.Keys
+            .Select((k, i) => $@"""{k}"" = @where_{i}")
+            .ToList();
+
+        var query = $@"UPDATE ""{tableName}"" 
+            SET {string.Join(", ", setParams)} 
+            WHERE {string.Join(" AND ", whereParams)}";
+
+        await using var cmd = new NpgsqlCommand(query, conn);
+        
+        // Добавление параметров SET
+        var setIndex = 0;
+        foreach (var kvp in updatedValues)
+        {
+            cmd.Parameters.AddWithValue($"set_{setIndex}", kvp.Value ?? DBNull.Value);
+            setIndex++;
+        }
+        
+        // Добавление параметров WHERE
+        var whereIndex = 0;
+        foreach (var kvp in primaryKeys)
+        {
+            cmd.Parameters.AddWithValue($"where_{whereIndex}", kvp.Value ?? DBNull.Value);
+            whereIndex++;
+        }
+
+        await cmd.ExecuteNonQueryAsync();
+    }
+
+    public async Task DeleteRecordAsync(string dbName, string tableName, 
+        Dictionary<string, object> primaryKeys)
+    {
+        CheckAdminAccess();
+        
+        if (primaryKeys.Count == 0) 
+            throw new ArgumentException("Primary keys required for deletion");
+
+        await using var conn = new NpgsqlConnection(GetConnectionString(dbName));
+        await conn.OpenAsync();
+
+        // Генерация параметров с индексами
+        var whereParams = primaryKeys.Keys
+            .Select((k, i) => $@"""{k}"" = @where_{i}")
+            .ToList();
+
+        var query = $@"DELETE FROM ""{tableName}"" 
+            WHERE {string.Join(" AND ", whereParams)}";
+
+        await using var cmd = new NpgsqlCommand(query, conn);
+        
+        // Добавление параметров
+        var whereIndex = 0;
+        foreach (var kvp in primaryKeys)
+        {
+            cmd.Parameters.AddWithValue($"where_{whereIndex}", kvp.Value ?? DBNull.Value);
+            whereIndex++;
+        }
+
         await cmd.ExecuteNonQueryAsync();
     }
     
@@ -185,6 +317,8 @@ public class DatabaseService
 
     public async Task UpdateTableAsync(string databaseName, string originalTableName, string newTableName, List<ColumnDefinition> columns)
     {
+        CheckAdminAccess();
+        
         await using var conn = new NpgsqlConnection(GetConnectionString(databaseName));
         await conn.OpenAsync();
         
@@ -239,6 +373,8 @@ public class DatabaseService
     
     public async Task InsertRecordAsync(string dbName, string tableName, Dictionary<string, object> record)
     {
+        CheckAdminAccess();
+        
         using var connection = new NpgsqlConnection(GetConnectionString(dbName));
         await connection.OpenAsync();
 
@@ -264,18 +400,11 @@ public class DatabaseService
         public string Name { get; set; }
         public string Type { get; set; }
         public bool IsPrimaryKey { get; set; }
-    }
+        
+        public bool IsNumeric => IsNumeric(Type);
 
-    public class TableAlteration
-    {
-        public AlterationType Type { get; set; }
-        public ColumnDefinition Column { get; set; }
-    }
-
-    public enum AlterationType
-    {
-        AddColumn,
-        DropColumn,
-        AlterColumnType
+        public bool IsForeignKey { get; set; }  // ⬅ добавлено
+        public string ForeignTable { get; set; }  // ⬅ добавлено
+        public string ForeignColumn { get; set; }  // ⬅ добавлено
     }
 }

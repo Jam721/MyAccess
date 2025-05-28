@@ -69,7 +69,10 @@
                         @foreach (var column in columns)
                         {
                             <div class="column-item">
-                                <input @bind="column.Name" placeholder="Имя колонки" class="column-input" />
+                                <input @bind="column.Name" 
+                                       placeholder="Имя колонки" 
+                                       class="column-input" />
+
                                 <select @bind="column.Type" class="type-select">
                                     <option value="integer">INTEGER</option>
                                     <option value="text">TEXT</option>
@@ -78,11 +81,48 @@
                                     <option value="date">DATE</option>
                                     <option value="timestamp">TIMESTAMP</option>
                                 </select>
-                                <label class="pk-check">
-                                    <input type="checkbox" @bind="column.IsPrimaryKey" />
-                                    PK
-                                </label>
-                                <button class="remove-column-btn" @onclick="() => RemoveColumn(column)">✕</button>
+
+                                <div class="check-group">
+                                    <label class="pk-check">
+                                        <input type="checkbox" @bind="column.IsPrimaryKey" />
+                                        PK
+                                    </label>
+        
+                                    <label class="fk-check">
+                                        <input type="checkbox" @bind="column.IsForeignKey" />
+                                        FK
+                                    </label>
+                                </div>
+
+                                @if (column.IsForeignKey)
+                                {
+                                    <div class="foreign-group">
+                                        <select @bind="column.ForeignTable" class="foreign-select">
+                                            <option value="">Выберите таблицу</option>
+                                            @foreach (var table in availableTablesAndColumns.Keys.Where(t => t != newTableName))
+                                            {
+                                                <option value="@table">@table</option>
+                                            }
+                                        </select>
+
+                                        @if (!string.IsNullOrEmpty(column.ForeignTable))
+                                        {
+                                            <select @bind="column.ForeignColumn" class="foreign-select">
+                                                <option value="">Выберите колонку</option>
+                                                @foreach (var col in availableTablesAndColumns[column.ForeignTable])
+                                                {
+                                                    <option value="@col">@col</option>
+                                                }
+                                            </select>
+                                        }
+                                    </div>
+                                }
+
+                                <button class="remove-column-btn" 
+                                        title="Удалить колонку"
+                                        @onclick="() => RemoveColumn(column)">
+                                    ✕
+                                </button>
                             </div>
                         }
                     </div>
@@ -117,6 +157,22 @@
     private List<DatabaseService.ColumnDefinition> columns = new();
     private string originalTableName;
     private string errorMessage;
+    
+    private Dictionary<string, List<string>> availableTablesAndColumns = new();
+    
+    private async Task LoadAvailableTablesAndColumns()
+    {
+        availableTablesAndColumns.Clear();
+        var allTables = await DbService.GetTablesAsync(DbName);
+
+        foreach (var table in allTables)
+        {
+            var cols = await DbService.GetTableColumnsAsync(DbName, table);
+            availableTablesAndColumns[table] = cols.Select(c => c.Name).ToList();
+        }
+    }
+
+
 
     private void NavigateToTable(string tableName)
     {
@@ -127,6 +183,8 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadTables();
+        await LoadAvailableTablesAndColumns();
+
     }
 
     private async Task LoadTables()
@@ -139,13 +197,6 @@
         {
             Navigation.NavigateTo("/");
         }
-    }
-
-    private async Task ShowTableData(string tableName)
-    {
-        selectedTable = tableName;
-        rows = null;
-        rows = await DbService.GetTableDataAsync(DbName, tableName);
     }
 
     private void CloseTable()

@@ -1,0 +1,203 @@
+﻿@using MyAccess.Services
+<div class="summary-report vk-style">
+    <div class="report-header">
+        <h3>Сводный отчет</h3>
+        <div class="report-info">
+            <span class="record-count">Записей: @Data.Count</span>
+            <span class="timestamp">@DateTime.Now.ToString("dd.MM.yyyy HH:mm")</span>
+        </div>
+    </div>
+    
+    <div class="stats-container">
+        @foreach (var column in Columns.Where(c => c.IsNumeric))
+        {
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-title">@column.Name</div>
+                </div>
+                
+                @if (Data.Any())
+                {
+                    var values = Data.Select(r => Convert.ToDecimal(r[column.Name])).ToList();
+                    <div class="stat-values">
+                        <div class="stat-item">
+                            <span class="stat-label">Сумма:</span>
+                            <span class="stat-number">@values.Sum()</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Среднее:</span>
+                            <span class="stat-number">@values.Average().ToString("N2")</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Мин:</span>
+                            <span class="stat-number">@values.Min()</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Макс:</span>
+                            <span class="stat-number">@values.Max()</span>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="no-data">Нет данных</div>
+                }
+            </div>
+        }
+    </div>
+    
+    <div class="report-footer">
+        <div class="additional-stats">
+            <div class="stat-item">
+                <span class="stat-label">Всего полей:</span>
+                <span class="stat-number">@Columns.Count</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Числовых полей:</span>
+                <span class="stat-number">@Columns.Count(c => c.IsNumeric)</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Основные стили VK */
+    .vk-style {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        color: #222;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+    
+    .report-header {
+        padding: 16px 20px;
+        background: #f9f9f9;
+        border-bottom: 1px solid #e7e8ec;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .report-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 500;
+        color: #2a5885;
+    }
+    
+    .report-info {
+        display: flex;
+        gap: 15px;
+        font-size: 13px;
+        color: #656565;
+    }
+    
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        padding: 20px;
+    }
+    
+    .stat-card {
+        border: 1px solid #e7e8ec;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-header {
+        background: #5181b8;
+        color: white;
+        padding: 12px 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .stat-icon {
+        font-size: 18px;
+    }
+    
+    .stat-title {
+        font-weight: 500;
+        font-size: 15px;
+    }
+    
+    .stat-values {
+        padding: 15px;
+        background: white;
+    }
+    
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f2f5;
+    }
+    
+    .stat-item:last-child {
+        border-bottom: none;
+    }
+    
+    .stat-label {
+        color: #656565;
+        font-size: 14px;
+    }
+    
+    .stat-number {
+        font-weight: 500;
+        color: #2a5885;
+        font-size: 15px;
+    }
+    
+    .no-data {
+        padding: 15px;
+        text-align: center;
+        color: #999;
+        font-style: italic;
+    }
+    
+    .report-footer {
+        padding: 15px 20px;
+        background: #f9f9f9;
+        border-top: 1px solid #e7e8ec;
+    }
+    
+    .additional-stats {
+        display: flex;
+        gap: 30px;
+        justify-content: center;
+    }
+    
+    .additional-stats .stat-item {
+        border: none;
+        padding: 0;
+    }
+    
+    .additional-stats .stat-label {
+        font-weight: 500;
+        color: #444;
+    }
+    
+    .additional-stats .stat-number {
+        font-weight: 600;
+        color: #5181b8;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public List<Dictionary<string, object>> Data { get; set; }
+
+    [Parameter]
+    public List<DatabaseService.ColumnDefinition> Columns { get; set; }
+}

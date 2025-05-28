@@ -1,0 +1,274 @@
+﻿@using System.Text.Json
+@using MyAccess.Services
+
+<div class="chart-report vk-style">
+    <div class="report-header">
+        <h3>Графический отчет</h3>
+        <div class="report-info">
+            <span class="timestamp">@DateTime.Now.ToString("dd.MM.yyyy HH:mm")</span>
+        </div>
+    </div>
+    
+    <div class="chart-controls">
+        <div class="control-group">
+            <label>Тип диаграммы:</label>
+            <select class="vk-select" @bind="selectedChartType">
+                <option value="Bar">Столбчатая диаграмма</option>
+                <option value="Pie">Круговая диаграмма</option>
+                <option value="Line">Линейный график</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label>Анализируемое поле:</label>
+            <select class="vk-select" @bind="selectedColumn">
+                @foreach (var column in Columns.Where(c => c.IsNumeric))
+                {
+                    <option value="@column.Name">@column.Name</option>
+                }
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label>Группировка:</label>
+            <select class="vk-select" @bind="groupingColumn">
+                <option value="">- Без группировки -</option>
+                @foreach (var column in Columns.Where(c => !c.IsNumeric))
+                {
+                    <option value="@column.Name">@column.Name</option>
+                }
+            </select>
+        </div>
+        
+        <button class="refresh-btn" @onclick="UpdateChartData">Обновить</button>
+    </div>
+    
+    <div class="chart-container">
+        @if (selectedChartType == "Bar")
+        {
+            <BarChart Data="@chartData" Title="@selectedColumn" />
+        }
+        else if (selectedChartType == "Pie")
+        {
+            <PieChart Data="@chartData" Title="@selectedColumn" />
+        }
+        else if (selectedChartType == "Line")
+        {
+            <LineChart Data="@chartData" Title="@selectedColumn" />
+        }
+        else if (chartData.Count == 0)
+        {
+            <div class="no-data-chart">
+                <i class="no-data-icon">📊</i>
+                <p>Нет данных для отображения</p>
+            </div>
+        }
+    </div>
+    
+    <div class="chart-summary">
+        <div class="summary-item">
+            <span class="summary-label">Всего значений:</span>
+            <span class="summary-value">@chartData.Sum(d => d.Value).ToString("N2")</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Максимум:</span>
+            <span class="summary-value">@(chartData.Any() ? chartData.Max(d => d.Value).ToString("N2") : "0")</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Минимум:</span>
+            <span class="summary-value">@(chartData.Any() ? chartData.Min(d => d.Value).ToString("N2") : "0")</span>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Основные стили VK */
+    .vk-style {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        color: #222;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+    
+    .report-header {
+        padding: 16px 20px;
+        background: #f9f9f9;
+        border-bottom: 1px solid #e7e8ec;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .report-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 500;
+        color: #2a5885;
+    }
+    
+    .report-info {
+        display: flex;
+        gap: 15px;
+        font-size: 13px;
+        color: #656565;
+    }
+    
+    .chart-controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+        padding: 20px;
+        background: #f9f9f9;
+        border-bottom: 1px solid #e7e8ec;
+    }
+    
+    .control-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .control-group label {
+        font-size: 13px;
+        color: #656565;
+        margin-bottom: 5px;
+    }
+    
+    .vk-select {
+        padding: 8px 12px;
+        border: 1px solid #d3d9de;
+        border-radius: 4px;
+        background: white;
+        font-size: 14px;
+        height: 36px;
+    }
+    
+    .vk-select:focus {
+        border-color: #5181b8;
+        outline: none;
+    }
+    
+    .refresh-btn {
+        align-self: flex-end;
+        background: #5181b8;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 15px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        height: 36px;
+    }
+    
+    .refresh-btn:hover {
+        background-color: #4a76a8;
+    }
+    
+    .chart-container {
+        height: 400px;
+        padding: 20px;
+        position: relative;
+    }
+    
+    .no-data-chart {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #999;
+    }
+    
+    .no-data-icon {
+        font-size: 64px;
+        opacity: 0.5;
+        margin-bottom: 15px;
+    }
+    
+    .chart-summary {
+        display: flex;
+        justify-content: space-around;
+        padding: 15px 20px;
+        background: #f9f9f9;
+        border-top: 1px solid #e7e8ec;
+    }
+    
+    .summary-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .summary-label {
+        font-size: 13px;
+        color: #656565;
+        margin-bottom: 5px;
+    }
+    
+    .summary-value {
+        font-size: 16px;
+        font-weight: 500;
+        color: #2a5885;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public List<Dictionary<string, object>> Data { get; set; }
+
+    [Parameter]
+    public List<DatabaseService.ColumnDefinition> Columns { get; set; }
+    
+    private string selectedChartType = "Bar";
+    private string selectedColumn;
+    private string groupingColumn = "";
+    private List<ChartData> chartData = new();
+    
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        UpdateChartData();
+    }
+    
+    private void UpdateChartData()
+    {
+        chartData.Clear();
+        
+        if (Columns == null || Data == null || !Data.Any()) return;
+        
+        var column = selectedColumn ?? Columns.FirstOrDefault(c => c.IsNumeric)?.Name;
+        if (string.IsNullOrEmpty(column)) return;
+        
+        // Если выбрана группировка
+        if (!string.IsNullOrEmpty(groupingColumn) && Columns.Any(c => c.Name == groupingColumn))
+        {
+            chartData = Data
+                .GroupBy(r => r[groupingColumn]?.ToString() ?? "Без группы")
+                .Select(g => new ChartData
+                {
+                    Label = g.Key,
+                    Value = g.Sum(r => Convert.ToDecimal(r[column]))
+                })
+                .ToList();
+        }
+        else
+        {
+            // Без группировки - показываем все значения
+            chartData = Data
+                .Select((r, i) => new ChartData
+                {
+                    Label = $"Запись {i + 1}",
+                    Value = Convert.ToDecimal(r[column])
+                })
+                .ToList();
+        }
+    }
+    
+    private class ChartData
+    {
+        public string Label { get; set; }
+        public decimal Value { get; set; }
+    }
+}

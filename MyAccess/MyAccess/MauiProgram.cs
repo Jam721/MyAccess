@@ -17,7 +17,11 @@ public static class MauiProgram
 
 		builder.Services.AddMauiBlazorWebView();
 		
-		builder.Services.AddSingleton(new DatabaseService("Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=Artur-123"));
+		builder.Services.AddSingleton<AuthService>();
+		builder.Services.AddSingleton(provider => {
+			var authService = provider.GetRequiredService<AuthService>();
+			return new DatabaseService("Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=Artur-123", authService);
+		});
 
 
 #if DEBUG

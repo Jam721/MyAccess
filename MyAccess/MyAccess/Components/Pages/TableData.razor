@@ -1,14 +1,36 @@
 ﻿@page "/database/{DbName}/table/{TableName}"
 @inherits ComponentBase
 @namespace MyAccess.Pages
+@using System.Collections.Concurrent
+@using System.Globalization
+@using System.Text.RegularExpressions
 @using MyAccess.Services
 @inject DatabaseService DbService
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
 
 <div class="table-data-container">
     <div class="table-data-header">
         <h2>@TableName</h2>
+        <div class="report-section">
+            <button class="report-btn" @onclick="ToggleReportMenu">
+                <i class="report-icon">📊</i> Отчеты
+            </button>
+
+            @if (showReportMenu)
+            {
+                <div class="report-menu">
+                    <div class="report-option"
+                         data-type="Summary"
+                         @onclick="() => GenerateReport(ReportType.Summary)">Сводный отчет</div>
+                    <div class="report-option"
+                         data-type="Detailed"
+                         @onclick="() => GenerateReport(ReportType.Detailed)">Детализированный отчет</div>
+                    <div class="report-option"
+                         data-type="Chart"
+                         @onclick="() => GenerateReport(ReportType.Chart)">Графический отчет</div>
+                </div>
+            }
+        </div>
         <div class="header-actions">
             <button class="add-record-btn" @onclick="ShowAddRecordDialog">+ Добавить запись</button>
             <button class="close-button" @onclick="NavigateBack">✕</button>
@@ -31,23 +53,28 @@
         <div class="data-table-wrapper">
             <table class="data-table">
                 <thead>
-                <tr>
-                    @foreach (var key in rows.First().Keys)
-                    {
-                        <th>@key</th>
-                    }
-                </tr>
+                    <tr>
+                        @foreach (var key in rows.First().Keys)
+                        {
+                            <th>@GetColumnTranslation(key)</th>
+                        }
+                        <th>Действия</th>
+                    </tr>
                 </thead>
                 <tbody>
-                @foreach (var row in rows)
-                {
-                    <tr>
-                        @foreach (var value in row.Values)
-                        {
-                            <td>@value?.ToString()</td>
-                        }
-                    </tr>
-                }
+                    @foreach (var row in rows)
+                    {
+                        <tr>
+                            @foreach (var value in row.Values)
+                            {
+                                <td>@value?.ToString()</td>
+                            }
+                            <td>
+                                <button class="edit-btn" @onclick="@(() => ShowEditRecordDialog(row))">✎</button>
+                                <button class="delete-btn" @onclick="@(() => DeleteRecord(row))">🗑</button>
+                            </td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>
@@ -57,55 +84,70 @@
     {
         <div class="dialog-overlay">
             <div class="dialog-content">
-                <h3>Новая запись</h3>
+                <h3>@(isEditing ? "Редактировать запись" : "Новая запись")</h3>
                 <div class="form-fields">
-                    @foreach (var column in tableColumns.Where(c => !c.IsPrimaryKey))
+                    @foreach (var column in tableColumns)
                     {
+                        if (!isEditing && column.IsPrimaryKey)
+                        {
+                            continue;
+                        }
+
                         var pgType = MapPgType(column.Type);
-                        var columnName = column.Name; // Локальная переменная для замыкания
+                        var columnName = column.Name;
 
                         <div class="form-group">
-                            <label>@column.Name (@pgType)</label>
+                            <label>@GetColumnTranslation(column.Name) (@pgType)</label>
 
-                            @switch(pgType)
+                            @if (isEditing && column.IsPrimaryKey)
                             {
-                                case "integer":
-                                    <input type="number"
-                                           value="@GetIntegerValue(columnName)"
-                                           @onchange="@(e => SetIntegerValue(columnName, e.Value))"
-                                           class="form-control"
-                                           step="1" />
-                                    break;
+                                <input type="text" 
+                                       value="@editPrimaryKeys.GetValueOrDefault(columnName)?.ToString()" 
+                                       readonly 
+                                       class="form-control" />
+                            }
+                            else
+                            {
+                                @switch(pgType)
+                                {
+                                    case "integer":
+                                        <input type="number"
+                                               value="@GetIntegerValue(columnName)"
+                                               @onchange="@(e => SetIntegerValue(columnName, e.Value))"
+                                               class="form-control"
+                                               step="1" />
+                                        break;
 
-                                case "numeric":
-                                    <input type="number"
-                                           value="@GetDecimalValue(columnName)"
-                                           @onchange="@(e => SetDecimalValue(columnName, e.Value))"
-                                           class="form-control"
-                                           step="0.01" />
-                                    break;
+                                    case "numeric":
+                                        <input type="number"
+                                               value="@GetDecimalValue(columnName)"
+                                               @onchange="@(e => SetDecimalValue(columnName, e.Value))"
+                                               class="form-control"
+                                               step="0.01" />
+                                        break;
 
-                                case "timestamp":
-                                case "date":
-                                    <input type="datetime-local"
-                                           value="@GetDateTimeValue(columnName, pgType)?.ToString("yyyy-MM-ddTHH:mm")"
-                                           @onchange="@(e => SetDateTimeValue(columnName, e.Value, pgType))"
-                                           class="form-control" />
-                                    break;
+                                    case "timestamp":
+                                    case "date":
+                                        <input type="datetime-local"
+                                               value="@GetDateTimeValue(columnName, pgType)?.ToString("yyyy-MM-ddTHH:mm")"
+                                               @onchange="@(e => SetDateTimeValue(columnName, e.Value, pgType))"
+                                               class="form-control" />
+                                        break;
 
-                                case "boolean":
-                                    <input type="checkbox"
-                                           checked="@GetBooleanValue(columnName)"
-                                           @onchange="@(e => SetBooleanValue(columnName, e.Value))"
-                                           class="form-check" />
-                                    break;
+                                    case "boolean":
+                                        <input type="checkbox"
+                                               checked="@GetBooleanValue(columnName)"
+                                               @onchange="@(e => SetBooleanValue(columnName, e.Value))"
+                                               class="form-check" />
+                                        break;
 
-                                default:
-                                    <input type="text"
-                                           value="@GetStringValue(columnName)"
-                                           @oninput="@(e => SetStringValue(columnName, e.Value))"
-                                           class="form-control" />
-                                    break;
+                                    default:
+                                        <input type="text"
+                                               value="@GetStringValue(columnName)"
+                                               @oninput="@(e => SetStringValue(columnName, e.Value))"
+                                               class="form-control" />
+                                        break;
+                                }
                             }
                         </div>
                     }
@@ -117,7 +159,7 @@
                 }
 
                 <div class="dialog-actions">
-                    <button class="primary-btn" @onclick="AddNewRecord">Сохранить</button>
+                    <button class="primary-btn" @onclick="SaveRecord">Сохранить</button>
                     <button class="cancel-btn" @onclick="CloseAddDialog">Отмена</button>
                 </div>
             </div>
@@ -136,8 +178,77 @@
     private List<DatabaseService.ColumnDefinition> tableColumns;
     private bool showAddDialog;
     private Dictionary<string, object> newRecord = new();
+    private Dictionary<string, object> editPrimaryKeys = new();
+    private bool isEditing;
     private string errorMessage;
-
+    private readonly ConcurrentDictionary<string, string> _translationCache = new();
+    private bool showReportMenu = false;
+    
+    private enum ReportType
+    {
+        Summary,
+        Detailed,
+        Chart
+    }
+    
+    private void ToggleReportMenu()
+    {
+        showReportMenu = !showReportMenu;
+    }
+    
+    private void GenerateReport(ReportType reportType)
+    {
+        showReportMenu = false;
+        Navigation.NavigateTo($"/database/{DbName}/table/{TableName}/report/{reportType}");
+    }
+    
+    private string GetColumnTranslation(string columnName)
+    {
+        return _translationCache.GetOrAdd(columnName, AutoTranslateColumn);
+    }
+    
+    
+    private string AutoTranslateColumn(string columnName)
+    {
+        var cleanName = Regex.Replace(columnName, "[^a-zA-Zа-яА-Я0-9]", " ");
+        cleanName = Regex.Replace(cleanName, "([a-zа-я])([A-ZА-Я])", "$1 $2");
+        cleanName = cleanName.Replace("_", " ");
+        
+        var dictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            {"id", "ИД"},
+            {"name", "Имя"},
+            {"date", "Дата"},
+            {"time", "Время"},
+            {"count", "Количество"},
+            {"price", "Цена"},
+            {"total", "Итого"},
+            {"sum", "Сумма"},
+            {"amount", "Сумма"},
+            {"created", "Создано"},
+            {"modified", "Изменено"},
+            {"status", "Статус"},
+            {"type", "Тип"},
+            {"desc", "Описание"},
+            {"description", "Описание"},
+            {"is", "Флаг"},
+            {"num", "Номер"},
+            {"text", "Текст"}
+        };
+        
+        var words = cleanName.Split(' ');
+        for (int i = 0; i < words.Length; i++)
+        {
+            if (dictionary.TryGetValue(words[i], out var translation))
+            {
+                words[i] = translation;
+            }
+        }
+        
+        string result = string.Join(" ", words);
+        return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(result.ToLower());
+    }
+    
     protected override async Task OnParametersSetAsync()
     {
         await LoadTableData();
@@ -159,6 +270,7 @@
         newRecord.Clear();
         errorMessage = "";
         showAddDialog = true;
+        isEditing = false;
     }
 
     private void CloseAddDialog()
@@ -166,14 +278,60 @@
         showAddDialog = false;
         newRecord.Clear();
         errorMessage = "";
+        isEditing = false;
+        editPrimaryKeys.Clear();
     }
 
     private void NavigateBack()
     {
         Navigation.NavigateTo($"/database/{DbName}");
     }
-    
-    private async Task AddNewRecord()
+
+    private async Task DeleteRecord(Dictionary<string, object> row)
+    {
+        try
+        {
+            var primaryKeys = tableColumns
+                .Where(c => c.IsPrimaryKey)
+                .ToDictionary(c => c.Name, c => row[c.Name]);
+            
+            await DbService.DeleteRecordAsync(DbName, TableName, primaryKeys);
+            await LoadTableData();
+            errorMessage = "";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка удаления: {ex.Message}";
+        }
+    }
+
+    private void ShowEditRecordDialog(Dictionary<string, object> row)
+    {
+        newRecord.Clear();
+        isEditing = true;
+        errorMessage = "";
+
+        var primaryKeyNames = tableColumns
+            .Where(c => c.IsPrimaryKey)
+            .Select(c => c.Name)
+            .ToHashSet();
+
+        foreach (var kvp in row)
+        {
+            if (!primaryKeyNames.Contains(kvp.Key))
+            {
+                newRecord[kvp.Key] = kvp.Value;
+            }
+        }
+
+        editPrimaryKeys = tableColumns
+            .Where(c => c.IsPrimaryKey)
+            .ToDictionary(c => c.Name, c => row[c.Name]);
+
+        showAddDialog = true;
+    }
+
+    private async Task SaveRecord()
     {
         try
         {
@@ -184,13 +342,21 @@
                 convertedRecord[kvp.Key] = ConvertValue(kvp.Value, column.Type);
             }
 
-            await DbService.InsertRecordAsync(DbName, TableName, convertedRecord);
+            if (isEditing)
+            {
+                await DbService.UpdateRecordAsync(DbName, TableName, editPrimaryKeys, convertedRecord);
+            }
+            else
+            {
+                await DbService.InsertRecordAsync(DbName, TableName, convertedRecord);
+            }
+
             await LoadTableData();
-            showAddDialog = false;
+            CloseAddDialog();
         }
         catch (Exception ex)
         {
-            errorMessage = $"Ошибка добавления записи: {ex.Message}";
+            errorMessage = $"Ошибка: {ex.Message}";
         }
     }
 
@@ -224,40 +390,6 @@
         };
     }
     
-    private int GetIntegerValue(object value)
-    {
-        if (value is int i) return i;
-        if (value != null && int.TryParse(value.ToString(), out int result)) return result;
-        return 0;
-    }
-
-    private decimal GetDecimalValue(object value)
-    {
-        if (value is decimal d) return d;
-        if (value != null && decimal.TryParse(value.ToString(), out decimal result)) return result;
-        return 0m;
-    }
-
-    private DateTime GetDateTimeValue(object value, string pgType)
-    {
-        if (value is DateTime dt) return dt;
-        if (pgType == "date") return DateTime.Today;
-        return DateTime.Now;
-    }
-
-    private bool GetBooleanValue(object value)
-    {
-        if (value is bool b) return b;
-        if (value != null && bool.TryParse(value.ToString(), out bool result)) return result;
-        return false;
-    }
-
-    private string GetStringValue(object value)
-    {
-        return value?.ToString() ?? string.Empty;
-    }
-    
-        // Методы получения значений
     private int GetIntegerValue(string columnName)
     {
         if (newRecord.TryGetValue(columnName, out var value))
@@ -302,8 +434,7 @@
     {
         return newRecord.TryGetValue(columnName, out var value) ? value?.ToString() ?? "" : "";
     }
-
-    // Методы установки значений
+    
     private void SetIntegerValue(string columnName, object value)
     {
         if (int.TryParse(value?.ToString(), out int result))

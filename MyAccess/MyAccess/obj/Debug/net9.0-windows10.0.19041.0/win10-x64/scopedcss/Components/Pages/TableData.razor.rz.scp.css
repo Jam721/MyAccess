@@ -1,3 +1,80 @@
+/* Стили для кнопки отчетов в стиле VK */
+.report-section[b-omjjbxvvjy] {
+    position: relative;
+    display: inline-block;
+    margin-right: 15px;
+}
+
+.report-btn[b-omjjbxvvjy] {
+    background-color: #5181b8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 15px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background-color 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.report-btn:hover[b-omjjbxvvjy] {
+    background-color: #4a76a8;
+}
+
+.report-menu[b-omjjbxvvjy] {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid #d3d9de;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    width: 220px;
+    margin-top: 5px;
+    overflow: hidden;
+}
+
+.report-option[b-omjjbxvvjy] {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 14px;
+    color: #222;
+    border-bottom: 1px solid #ebedf0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.report-option:last-child[b-omjjbxvvjy] {
+    border-bottom: none;
+}
+
+.report-option:hover[b-omjjbxvvjy] {
+    background-color: #f0f2f5;
+    color: #2a5885;
+}
+
+.report-option[b-omjjbxvvjy]::before {
+    content: "•";
+    color: #5181b8;
+    font-weight: bold;
+}
+.report-option[data-type="Summary"][b-omjjbxvvjy]::before {
+    content: "📋";
+}
+
+.report-option[data-type="Detailed"][b-omjjbxvvjy]::before {
+    content: "📄";
+}
+
+.report-option[data-type="Chart"][b-omjjbxvvjy]::before {
+    content: "📈";
+}
 
 .table-data-container[b-omjjbxvvjy] {
     background: #fff;

@@ -1,4 +1,7 @@
-﻿@inherits LayoutComponentBase
+﻿@using MyAccess.Services
+@inherits LayoutComponentBase
+@inject AuthService AuthService
+@inject DatabaseService DbService
 
 <div class="page">
     <div class="sidebar">
@@ -6,12 +9,137 @@
     </div>
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+        <div class="top-row">
+            <div class="user-info">
+                @if (AuthService.CurrentUser != null)
+                {
+                    <div class="user-profile">
+                        <span class="username">@AuthService.CurrentUser.Username</span>
+                        <span class="user-role">(@GetRoleName(AuthService.CurrentUser.Role))</span>
+                        <button class="btn-logout" @onclick="Logout">Выйти</button>
+                    </div>
+                }
+                else
+                {
+                    <button class="btn-login" @onclick='ShowLoginDialog'>Войти</button>
+                }
+            </div>
         </div>
 
-        <article class="content px-4">
+        <article class="content">
             @Body
         </article>
     </main>
 </div>
+
+@if (showLoginDialog)
+{
+    <div class="login-overlay" @onclick="CancelLogin">
+        <div class="login-dialog" @onclick:stopPropagation>
+            <div class="login-header">
+                <h3>Вход в систему</h3>
+            </div>
+
+            <div class="form-group">
+                <input type="text"
+                       class="form-input"
+                       placeholder="Логин"
+                       @bind="username"
+                       @onkeypress="HandleKeyPress" />
+            </div>
+
+            <div class="form-group">
+                <input type="password"
+                       class="form-input"
+                       placeholder="Пароль"
+                       @bind="password"
+                       @onkeypress="HandleKeyPress" />
+            </div>
+
+            @if (!string.IsNullOrEmpty(loginError))
+            {
+                <div class="error-message">@loginError</div>
+            }
+
+            <button class="login-button" @onclick="Login">Войти</button>
+        </div>
+    </div>
+}
+
+@code {
+    private bool showLoginDialog = false;
+    private string username = string.Empty;
+    private string password = string.Empty;
+    private string loginError = string.Empty;
+
+    private string GetRoleName(string role) => role switch
+    {
+        "admin" => "Администратор",
+        _ => "Пользователь"
+    };
+
+    private void ShowLoginDialog()
+    {
+        showLoginDialog = true;
+        username = "";
+        password = "";
+        loginError = "";
+    }
+    
+    protected override void OnInitialized()
+    {
+        // Обновляем AuthService в DatabaseService
+        DbService.UpdateAuthService(AuthService);
+    }
+
+    private void Login()
+    {
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            loginError = "Введите логин";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            loginError = "Введите пароль";
+            return;
+        }
+
+        // Проверка учетных данных
+        if (username.ToLower() == "admin" && password == "admin")
+        {
+            AuthService.Login(username, "admin");
+            
+            DbService.UpdateAuthService(AuthService);
+        }
+        else
+        {
+            // Для всех остальных - обычный пользователь
+            AuthService.Login(username, "user");
+            
+            DbService.UpdateAuthService(AuthService);
+        }
+
+        showLoginDialog = false;
+    }
+
+    private void HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            Login();
+        }
+    }
+
+    private void CancelLogin()
+    {
+        showLoginDialog = false;
+        loginError = "";
+    }
+
+    private void Logout()
+    {
+        AuthService.Logout();
+    }
+}

@@ -1,3 +1,4 @@
+/* Сохраняем ваши текущие стили */
 .page {
     position: relative;
     display: flex;
@@ -21,29 +22,29 @@ main {
     align-items: center;
 }
 
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        white-space: nowrap;
-        margin-left: 1.5rem;
-        text-decoration: none;
-    }
+.top-row ::deep a, .top-row ::deep .btn-link {
+    white-space: nowrap;
+    margin-left: 1.5rem;
+    text-decoration: none;
+}
 
-        .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
-            text-decoration: underline;
-        }
+.top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
+    text-decoration: underline;
+}
 
-        .top-row ::deep a:first-child {
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+.top-row ::deep a:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
 @media (max-width: 640.98px) {
     .top-row {
         justify-content: space-between;
     }
 
-        .top-row ::deep a, .top-row ::deep .btn-link {
-            margin-left: 0;
-        }
+    .top-row ::deep a, .top-row ::deep .btn-link {
+        margin-left: 0;
+    }
 }
 
 @media (min-width: 641px) {
@@ -64,14 +65,145 @@ main {
         z-index: 1;
     }
 
-        .top-row.auth ::deep a:first-child {
-            flex: 1;
-            text-align: right;
-            width: 0;
-        }
+    .top-row.auth ::deep a:first-child {
+        flex: 1;
+        text-align: right;
+        width: 0;
+    }
 
     .top-row, article {
         padding-left: 2rem !important;
         padding-right: 1.5rem !important;
     }
+}
+
+/* Добавляем новые стили в стиле VK */
+.user-info {
+    display: flex;
+    align-items: center;
+    padding-right: 20px;
+}
+
+.btn-login {
+    background-color: #5181b8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 14px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-login:hover {
+    background-color: #4a76a8;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.username {
+    font-size: 14px;
+    font-weight: 500;
+    color: #222;
+}
+
+.user-role {
+    font-size: 12px;
+    color: #656565;
+}
+
+.btn-logout {
+    background: #5181b8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-logout:hover {
+    background-color: #4a76a8;
+}
+
+/* Стили формы входа */
+.login-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.login-dialog {
+    width: 300px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    padding: 24px;
+    text-align: center;
+}
+
+.login-header {
+    margin-bottom: 20px;
+}
+
+.login-header h3 {
+    margin: 0 0 5px 0;
+    font-size: 18px;
+    color: #222;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d3d9de;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.form-input:focus {
+    border-color: #5181b8;
+    outline: none;
+}
+
+.login-button {
+    width: 100%;
+    background-color: #5181b8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 10px;
+}
+
+.login-button:hover {
+    background-color: #4a76a8;
+}
+
+.error-message {
+    color: #e64646;
+    font-size: 13px;
+    margin: 5px 0;
+    text-align: left;
 }
