@@ -24,7 +24,121 @@
     </div>
 
     <script src="_framework/blazor.webview.js" autostart="false"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // Глобальное хранилище экземпляров графиков
+        window.chartInstances = {};
 
+        // Функция для создания/обновления графика
+        window.createOrUpdateChart = function(canvasId, chartType, labelsJson, dataJson, totalValue) {
+            // Удаляем старый график, если он существует
+            if (window.chartInstances[canvasId]) {
+                window.chartInstances[canvasId].destroy();
+            }
+
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const labels = JSON.parse(labelsJson);
+            const data = JSON.parse(dataJson);
+
+            // Генерация цветов
+            const colors = generateColors(labels.length);
+
+            const config = {
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Значения',
+                        data: data,
+                        backgroundColor: colors,
+                        borderColor: colors.map(c => c.replace('60%', '40%')),
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Всего: ' + totalValue
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y || context.parsed;
+                                    const total = context.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? (value / total * 100).toFixed(1) : 0;
+                                    return `${value.toFixed(2)} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Создаем и сохраняем новый график
+            window.chartInstances[canvasId] = new Chart(ctx, config);
+        };
+
+        // Функция для экспорта графика как изображения
+        window.exportChartAsImage = function(canvasId, filename) {
+            try {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) return;
+
+                // Проверяем валидность canvas
+                if (canvas.width === 0 || canvas.height === 0) {
+                    throw new Error(`Canvas ${canvasId} имеет нулевой размер`);
+                }
+
+                const link = document.createElement('a');
+                link.download = filename + '.png';
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                console.error('Ошибка экспорта графика:', error);
+                alert('Ошибка экспорта графика: ' + error.message);
+            }
+        };
+
+        // Генерация цветов для графиков
+        function generateColors(count) {
+            const colors = [];
+            const hueStep = 360 / count;
+
+            for (let i = 0; i < count; i++) {
+                const hue = i * hueStep;
+                colors.push(`hsl(${hue}, 70%, 60%)`);
+            }
+
+            return colors;
+        }
+    </script>
+    <script>
+        window.downloadPdfFile = function (fileName, base64Data) {
+            try {
+                const link = document.createElement('a');
+                link.download = fileName;
+                link.href = 'data:application/pdf;base64,' + base64Data;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                return true;
+            } catch (e) {
+                console.error('Ошибка скачивания PDF:', e);
+                return false;
+            }
+        };
+    </script>
 </body>
 
 </html>

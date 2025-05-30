@@ -66,6 +66,18 @@
             "Npgsql": {
               "target": "Package",
               "version": "[9.0.3, )"
+            },
+            "QuestPDF": {
+              "target": "Package",
+              "version": "[2025.5.0, )"
+            },
+            "SkiaSharp": {
+              "target": "Package",
+              "version": "[3.119.0, )"
+            },
+            "iTextSharp.LGPLv2.Core": {
+              "target": "Package",
+              "version": "[3.7.4, )"
             }
           },
           "imports": [

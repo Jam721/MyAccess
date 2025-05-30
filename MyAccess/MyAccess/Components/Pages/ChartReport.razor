@@ -1,274 +1,562 @@
 ﻿@using System.Text.Json
 @using MyAccess.Services
+@using System.Linq
+@inject IJSRuntime JSRuntime
+@inject PdfReportService PdfService
 
-<div class="chart-report vk-style">
+<div class="chart-report-container">
     <div class="report-header">
-        <h3>Графический отчет</h3>
-        <div class="report-info">
+        <h2><i class="fas fa-chart-bar"></i> Графический отчет</h2>
+        <div class="header-info">
             <span class="timestamp">@DateTime.Now.ToString("dd.MM.yyyy HH:mm")</span>
+            <span class="record-count">Записей: @Data?.Count.ToString()</span>
         </div>
     </div>
-    
-    <div class="chart-controls">
-        <div class="control-group">
-            <label>Тип диаграммы:</label>
-            <select class="vk-select" @bind="selectedChartType">
-                <option value="Bar">Столбчатая диаграмма</option>
-                <option value="Pie">Круговая диаграмма</option>
-                <option value="Line">Линейный график</option>
-            </select>
+
+    <div class="chart-controls-panel">
+        <div class="controls-grid">
+            <div class="control-group">
+                <label><i class="fas fa-chart-line"></i> Тип диаграммы:</label>
+                <select class="form-control" @bind="selectedChartType">
+                    <option value="bar">Столбчатая</option>
+                    <option value="pie">Круговая</option>
+                    <option value="line">Линейная</option>
+                    <option value="doughnut">Кольцевая</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label><i class="fas fa-calculator"></i> Значения:</label>
+                <select class="form-control" @bind="selectedColumn">
+                    @if (Columns != null && Columns.Any())
+                    {
+                        @foreach (var column in Columns)
+                        {
+                            <option value="@column.Name">@column.Name</option>
+                        }
+                    }
+                    else
+                    {
+                        <option disabled>Нет доступных столбцов</option>
+                    }
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label><i class="fas fa-layer-group"></i> Группировка:</label>
+                <select class="form-control" @bind="groupingColumn">
+                    <option value="">- Без группировки -</option>
+                    @if (Columns != null)
+                    {
+                        @foreach (var column in Columns)
+                        {
+                            <option value="@column.Name">@column.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label><i class="fas fa-function"></i> Агрегация:</label>
+                <select class="form-control" @bind="aggregationType">
+                    <option value="Sum">Сумма</option>
+                    <option value="Average">Среднее</option>
+                    <option value="Count">Количество</option>
+                    <option value="Max">Максимум</option>
+                    <option value="Min">Минимум</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label><i class="fas fa-sort-amount-down"></i> Лимит групп:</label>
+                <input type="number" class="form-control" @bind="groupLimit" min="1" max="50" />
+            </div>
         </div>
-        
-        <div class="control-group">
-            <label>Анализируемое поле:</label>
-            <select class="vk-select" @bind="selectedColumn">
-                @foreach (var column in Columns.Where(c => c.IsNumeric))
-                {
-                    <option value="@column.Name">@column.Name</option>
-                }
-            </select>
+
+        <div class="action-buttons">
+            <button class="btn-refresh" @onclick="UpdateChartData">
+                <i class="fas fa-sync-alt"></i> Обновить
+            </button>
+            <button class="btn-export" @onclick="ExportChart">
+                <i class="fas fa-download"></i> Экспорт
+            </button>
         </div>
-        
-        <div class="control-group">
-            <label>Группировка:</label>
-            <select class="vk-select" @bind="groupingColumn">
-                <option value="">- Без группировки -</option>
-                @foreach (var column in Columns.Where(c => !c.IsNumeric))
-                {
-                    <option value="@column.Name">@column.Name</option>
-                }
-            </select>
-        </div>
-        
-        <button class="refresh-btn" @onclick="UpdateChartData">Обновить</button>
     </div>
-    
-    <div class="chart-container">
-        @if (selectedChartType == "Bar")
+
+    <div class="chart-area">
+        @if (isLoading)
         {
-            <BarChart Data="@chartData" Title="@selectedColumn" />
+            <div class="loading-indicator">
+                <i class="fas fa-spinner fa-spin"></i> Загрузка данных...
+            </div>
         }
-        else if (selectedChartType == "Pie")
-        {
-            <PieChart Data="@chartData" Title="@selectedColumn" />
-        }
-        else if (selectedChartType == "Line")
-        {
-            <LineChart Data="@chartData" Title="@selectedColumn" />
-        }
-        else if (chartData.Count == 0)
+        else if (!chartData.Any())
         {
             <div class="no-data-chart">
                 <i class="no-data-icon">📊</i>
-                <p>Нет данных для отображения</p>
+                <h3>@errorMessage</h3>
+                <p>Проверьте настройки и попробуйте снова</p>
             </div>
-        }
-    </div>
-    
-    <div class="chart-summary">
-        <div class="summary-item">
-            <span class="summary-label">Всего значений:</span>
-            <span class="summary-value">@chartData.Sum(d => d.Value).ToString("N2")</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Максимум:</span>
-            <span class="summary-value">@(chartData.Any() ? chartData.Max(d => d.Value).ToString("N2") : "0")</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Минимум:</span>
-            <span class="summary-value">@(chartData.Any() ? chartData.Min(d => d.Value).ToString("N2") : "0")</span>
-        </div>
-    </div>
-</div>
-
-<style>
-    /* Основные стили VK */
-    .vk-style {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        color: #222;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
-    }
-    
-    .report-header {
-        padding: 16px 20px;
-        background: #f9f9f9;
-        border-bottom: 1px solid #e7e8ec;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .report-header h3 {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 500;
-        color: #2a5885;
-    }
-    
-    .report-info {
-        display: flex;
-        gap: 15px;
-        font-size: 13px;
-        color: #656565;
-    }
-    
-    .chart-controls {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 15px;
-        padding: 20px;
-        background: #f9f9f9;
-        border-bottom: 1px solid #e7e8ec;
-    }
-    
-    .control-group {
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .control-group label {
-        font-size: 13px;
-        color: #656565;
-        margin-bottom: 5px;
-    }
-    
-    .vk-select {
-        padding: 8px 12px;
-        border: 1px solid #d3d9de;
-        border-radius: 4px;
-        background: white;
-        font-size: 14px;
-        height: 36px;
-    }
-    
-    .vk-select:focus {
-        border-color: #5181b8;
-        outline: none;
-    }
-    
-    .refresh-btn {
-        align-self: flex-end;
-        background: #5181b8;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 8px 15px;
-        font-size: 14px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-        height: 36px;
-    }
-    
-    .refresh-btn:hover {
-        background-color: #4a76a8;
-    }
-    
-    .chart-container {
-        height: 400px;
-        padding: 20px;
-        position: relative;
-    }
-    
-    .no-data-chart {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        color: #999;
-    }
-    
-    .no-data-icon {
-        font-size: 64px;
-        opacity: 0.5;
-        margin-bottom: 15px;
-    }
-    
-    .chart-summary {
-        display: flex;
-        justify-content: space-around;
-        padding: 15px 20px;
-        background: #f9f9f9;
-        border-top: 1px solid #e7e8ec;
-    }
-    
-    .summary-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .summary-label {
-        font-size: 13px;
-        color: #656565;
-        margin-bottom: 5px;
-    }
-    
-    .summary-value {
-        font-size: 16px;
-        font-weight: 500;
-        color: #2a5885;
-    }
-</style>
-
-@code {
-    [Parameter]
-    public List<Dictionary<string, object>> Data { get; set; }
-
-    [Parameter]
-    public List<DatabaseService.ColumnDefinition> Columns { get; set; }
-    
-    private string selectedChartType = "Bar";
-    private string selectedColumn;
-    private string groupingColumn = "";
-    private List<ChartData> chartData = new();
-    
-    protected override void OnInitialized()
-    {
-        base.OnInitialized();
-        UpdateChartData();
-    }
-    
-    private void UpdateChartData()
-    {
-        chartData.Clear();
-        
-        if (Columns == null || Data == null || !Data.Any()) return;
-        
-        var column = selectedColumn ?? Columns.FirstOrDefault(c => c.IsNumeric)?.Name;
-        if (string.IsNullOrEmpty(column)) return;
-        
-        // Если выбрана группировка
-        if (!string.IsNullOrEmpty(groupingColumn) && Columns.Any(c => c.Name == groupingColumn))
-        {
-            chartData = Data
-                .GroupBy(r => r[groupingColumn]?.ToString() ?? "Без группы")
-                .Select(g => new ChartData
-                {
-                    Label = g.Key,
-                    Value = g.Sum(r => Convert.ToDecimal(r[column]))
-                })
-                .ToList();
         }
         else
         {
-            // Без группировки - показываем все значения
-            chartData = Data
-                .Select((r, i) => new ChartData
-                {
-                    Label = $"Запись {i + 1}",
-                    Value = Convert.ToDecimal(r[column])
-                })
-                .ToList();
+            <div class="chart-wrapper">
+                <canvas id="@chartCanvasId"></canvas>
+            </div>
+
+            <div class="chart-data-table">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Группа</th>
+                        <th>Значение</th>
+                        <th>% от общего</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in chartData.OrderByDescending(d => d.Value))
+                    {
+                        <tr>
+                            <td>@item.Label</td>
+                            <td>@item.Value.ToString("N2")</td>
+                            <td>@((totalValue > 0 ? item.Value / totalValue * 100 : 0).ToString("N1"))%</td>
+                        </tr>
+                    }
+                    @if (hasMoreGroups)
+                    {
+                        <tr class="summary-row">
+                            <td>Остальные группы</td>
+                            <td>@otherGroupsValue.ToString("N2")</td>
+                            <td>@((totalValue > 0 ? otherGroupsValue / totalValue * 100 : 0).ToString("N1"))%</td>
+                        </tr>
+                    }
+                    <tr class="total-row">
+                        <td><strong>Итого</strong></td>
+                        <td><strong>@totalValue.ToString("N2")</strong></td>
+                        <td><strong>100%</strong></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+
+    <div class="chart-summary">
+        <div class="summary-card">
+            <div class="summary-value">@chartData.Count</div>
+            <div class="summary-label">Групп данных</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value">@maxValue.ToString("N2")</div>
+            <div class="summary-label">Максимум</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value">@minValue.ToString("N2")</div>
+            <div class="summary-label">Минимум</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-value">@(chartData.Count > 0 ? (totalValue / chartData.Count).ToString("N2") : "0")</div>
+            <div class="summary-label">Среднее</div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button class="btn-refresh" @onclick="UpdateChartData">
+            <i class="fas fa-sync-alt"></i> Обновить
+        </button>
+        <button class="btn-export" @onclick="ExportChart">
+            <i class="fas fa-download"></i> Экспорт графика
+        </button>
+        <button class="btn-export-pdf" @onclick="ExportToPdf">
+            <i class="fas fa-file-pdf"></i> Экспорт в PDF
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public List<Dictionary<string, object>> Data { get; set; } = new();
+
+    [Parameter]
+    public List<DatabaseService.ColumnDefinition> Columns { get; set; } = new();
+
+    // Параметры отчета
+    private string selectedChartType = "bar";
+    private string selectedColumn = "";
+    private string groupingColumn = "";
+    private string aggregationType = "Sum";
+    private int groupLimit = 10;
+    private string errorMessage = "Нет данных для отображения";
+
+    // Данные для графика
+    private List<ChartData> chartData = new();
+    private decimal totalValue;
+    private decimal maxValue;
+    private decimal minValue;
+    private decimal otherGroupsValue;
+    private bool hasMoreGroups;
+    private bool isLoading;
+
+    // Для работы с графиком
+    private string chartCanvasId = $"chart_{Guid.NewGuid().ToString("N")}";
+    
+    private async Task ExportToPdf()
+    {
+        if (!chartData.Any()) return;
+
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // Получаем изображение графика
+            var chartImage = await GetChartImageBase64();
+            
+            // Генерируем PDF
+            var pdfBytes = PdfService.GenerateChartReportPdf(
+                title: "Графический отчет",
+                tableName: "T",
+                recordCount: Data?.Count ?? 0,
+                timestamp: DateTime.Now.ToString("dd.MM.yyyy HH:mm"),
+                chartTitle: GetChartTitle(),
+                chartImageBase64: chartImage,
+                chartData: chartData.Select(d => new PdfReportService.ChartDataPdf {
+                    Label = d.Label,
+                    Value = d.Value
+                }).ToList(),
+                totalValue: totalValue,
+                maxValue: maxValue,
+                minValue: minValue,
+                otherGroupsValue: otherGroupsValue,
+                hasMoreGroups: hasMoreGroups
+            );
+
+            // Скачиваем файл
+            var fileName = $"TName_ChartReport_{DateTime.Now:yyyyMMdd_HHmm}.pdf";
+            await JSRuntime.InvokeVoidAsync("downloadPdfFile", fileName, Convert.ToBase64String(pdfBytes));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка экспорта в PDF: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", $"Ошибка экспорта в PDF: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
         }
     }
-    
+
+    private async Task<string> GetChartImageBase64()
+    {
+        try
+        {
+            // Получаем DataURL изображения
+            var dataUrl = await JSRuntime.InvokeAsync<string>("getChartImage", chartCanvasId);
+            
+            // Извлекаем base64 часть
+            if (dataUrl.StartsWith("data:image/png;base64,"))
+            {
+                return dataUrl.Substring("data:image/png;base64,".Length);
+            }
+            return dataUrl;
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
+    private string GetChartTitle()
+    {
+        var title = $"График: {selectedColumn} ({GetAggregationName()})";
+        if (!string.IsNullOrEmpty(groupingColumn))
+        {
+            title += $" по {groupingColumn}";
+        }
+        return title;
+    }
+
+    private string GetAggregationName()
+    {
+        return aggregationType switch
+        {
+            "Sum" => "Сумма",
+            "Average" => "Среднее",
+            "Count" => "Количество",
+            "Max" => "Максимум",
+            "Min" => "Минимум",
+            _ => aggregationType
+        };
+    }
+
+    protected override void OnInitialized()
+    {
+        // Инициализация выбранного столбца
+        if (Columns != null && Columns.Any())
+        {
+            selectedColumn = Columns.First().Name;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Динамически загружаем Chart.js
+            await LoadChartJs();
+        }
+
+        if (chartData.Any())
+        {
+            await RenderChart();
+        }
+    }
+
+    private async Task LoadChartJs()
+    {
+        await JSRuntime.InvokeVoidAsync("eval", @"
+            if (!window.chartJsLoaded) {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js';
+                script.onload = () => window.chartJsLoaded = true;
+                document.head.appendChild(script);
+                
+                // Инициализируем хранилище графиков
+                window.chartInstances = window.chartInstances || {};
+            }
+        ");
+    }
+
+    private async Task UpdateChartData()
+    {
+        isLoading = true;
+        errorMessage = "Нет данных для отображения";
+        StateHasChanged();
+
+        try
+        {
+            // Сброс предыдущих данных
+            chartData.Clear();
+            totalValue = 0;
+            maxValue = 0;
+            minValue = 0;
+            otherGroupsValue = 0;
+            hasMoreGroups = false;
+
+            // Проверка наличия данных
+            if (Data == null || !Data.Any())
+            {
+                errorMessage = "Таблица не содержит данных";
+                return;
+            }
+
+            if (string.IsNullOrEmpty(selectedColumn))
+            {
+                errorMessage = "Не выбран столбец для анализа";
+                return;
+            }
+
+            // Проверяем, содержит ли столбец числовые данные
+            bool hasNumericData = false;
+            foreach (var row in Data)
+            {
+                if (row.TryGetValue(selectedColumn, out var value) &&
+                    value != null &&
+                    IsNumericValue(value))
+                {
+                    hasNumericData = true;
+                    break;
+                }
+            }
+
+            if (!hasNumericData)
+            {
+                errorMessage = $"Столбец '{selectedColumn}' не содержит числовых данных";
+                return;
+            }
+
+            // Сбор данных для группировки
+            var groupedData = new Dictionary<string, List<decimal>>();
+
+            if (!string.IsNullOrEmpty(groupingColumn))
+            {
+                // Группировка по выбранному столбцу
+                foreach (var row in Data)
+                {
+                    object? groupValue = null;
+                    if (row.TryGetValue(groupingColumn, out var gv))
+                    {
+                        groupValue = gv;
+                    }
+
+                    var groupName = groupValue?.ToString() ?? "N/A";
+
+                    if (row.TryGetValue(selectedColumn, out var value) && value != null)
+                    {
+                        if (TryConvertToDecimal(value, out decimal numValue))
+                        {
+                            if (!groupedData.ContainsKey(groupName))
+                            {
+                                groupedData[groupName] = new List<decimal>();
+                            }
+                            groupedData[groupName].Add(numValue);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Без группировки - все данные как одна группа
+                groupedData["Все данные"] = new List<decimal>();
+                foreach (var row in Data)
+                {
+                    if (row.TryGetValue(selectedColumn, out var value) && value != null)
+                    {
+                        if (TryConvertToDecimal(value, out decimal numValue))
+                        {
+                            groupedData["Все данные"].Add(numValue);
+                        }
+                    }
+                }
+            }
+
+            // Применение агрегации
+            foreach (var group in groupedData)
+            {
+                if (!group.Value.Any()) continue;
+
+                decimal aggregatedValue = aggregationType switch
+                {
+                    "Average" => group.Value.Average(),
+                    "Count" => group.Value.Count,
+                    "Max" => group.Value.Max(),
+                    "Min" => group.Value.Min(),
+                    _ => group.Value.Sum() // По умолчанию Sum
+                };
+
+                chartData.Add(new ChartData
+                {
+                    Label = group.Key,
+                    Value = aggregatedValue
+                });
+            }
+
+            if (!chartData.Any())
+            {
+                errorMessage = "Не удалось рассчитать данные для графика";
+                return;
+            }
+
+            // Применение лимита групп
+            if (chartData.Count > groupLimit)
+            {
+                var orderedData = chartData.OrderByDescending(d => d.Value).ToList();
+                var mainData = orderedData.Take(groupLimit - 1).ToList();
+                otherGroupsValue = orderedData.Skip(groupLimit - 1).Sum(d => d.Value);
+
+                chartData = mainData;
+                chartData.Add(new ChartData
+                {
+                    Label = "Другие группы",
+                    Value = otherGroupsValue
+                });
+
+                hasMoreGroups = true;
+            }
+
+            // Расчет итоговых значений
+            if (chartData.Any())
+            {
+                totalValue = chartData.Sum(d => d.Value);
+                maxValue = chartData.Max(d => d.Value);
+                minValue = chartData.Min(d => d.Value);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка: {ex.Message}";
+            Console.WriteLine($"Ошибка при создании отчета: {ex}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private bool IsNumericValue(object value)
+    {
+        return value is int || value is long || value as int? != null ||
+               value is decimal || value as decimal? != null ||
+               value is double || value as double? != null ||
+               value is float || value as float? != null;
+    }
+
+    private bool TryConvertToDecimal(object value, out decimal result)
+    {
+        result = 0;
+
+        try
+        {
+            if (value is int i) result = i;
+            else if (value is long l) result = l;
+            else if (value is double d) result = (decimal)d;
+            else if (value is float f) result = (decimal)f;
+            else if (value is decimal dm) result = dm;
+            else if (value is string s) return decimal.TryParse(s, out result);
+            else return false;
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private async Task RenderChart()
+    {
+        if (!chartData.Any()) return;
+
+        try
+        {
+            var labels = JsonSerializer.Serialize(chartData.Select(d => d.Label));
+            var values = JsonSerializer.Serialize(chartData.Select(d => (double)d.Value));
+
+            await JSRuntime.InvokeVoidAsync("createOrUpdateChart",
+                chartCanvasId,
+                selectedChartType,
+                labels,
+                values,
+                totalValue.ToString("N2")
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при отрисовке графика: {ex.Message}");
+        }
+    }
+
+    private async Task ExportChart()
+    {
+        if (!chartData.Any()) return;
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("exportChartAsImage",
+                chartCanvasId,
+                $"График_{DateTime.Now:yyyyMMdd_HHmm}"
+            );
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка экспорта: {ex.Message}");
+        }
+    }
+
     private class ChartData
     {
-        public string Label { get; set; }
+        public string Label { get; set; } = "";
         public decimal Value { get; set; }
     }
 }

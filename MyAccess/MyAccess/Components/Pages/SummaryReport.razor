@@ -1,203 +1,290 @@
 ﻿@using MyAccess.Services
-<div class="summary-report vk-style">
+@using System.Linq
+@inject IJSRuntime JSRuntime
+@inject PdfReportService PdfReport
+
+<div class="report-container">
     <div class="report-header">
-        <h3>Сводный отчет</h3>
-        <div class="report-info">
-            <span class="record-count">Записей: @Data.Count</span>
-            <span class="timestamp">@DateTime.Now.ToString("dd.MM.yyyy HH:mm")</span>
+        <h2><i class="fas fa-chart-pie"></i> Расширенный сводный отчет</h2>
+        <div class="header-info">
+            <div class="info-item">
+                <span class="label">Таблица:</span>
+                <span class="value">@TableName</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Записей:</span>
+                <span class="value">@Data.Count</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Сформирован:</span>
+                <span class="value">@DateTime.Now.ToString("dd.MM.yyyy HH:mm")</span>
+            </div>
         </div>
     </div>
-    
-    <div class="stats-container">
+
+    <div class="stats-grid">
+        <!-- Блок общей статистики -->
+        <div class="stat-card wide-card">
+            <h3><i class="fas fa-table"></i> Общая информация</h3>
+            <div class="grid-container">
+                <div class="grid-item">
+                    <div class="stat-value">@Columns.Count</div>
+                    <div class="stat-label">Всего полей</div>
+                </div>
+                <div class="grid-item">
+                    <div class="stat-value">@Columns.Count(c => c.IsNumeric)</div>
+                    <div class="stat-label">Числовых полей</div>
+                </div>
+                <div class="grid-item">
+                    <div class="stat-value">@Columns.Count(c => !c.IsNumeric)</div>
+                    <div class="stat-label">Текстовых полей</div>
+                </div>
+                <div class="grid-item">
+                    <div class="stat-value">@CalculateNullPercentage()%</div>
+                    <div class="stat-label">Заполненность данных</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Блок числовых полей -->
         @foreach (var column in Columns.Where(c => c.IsNumeric))
         {
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-icon">📊</div>
-                    <div class="stat-title">@column.Name</div>
-                </div>
-                
-                @if (Data.Any())
-                {
-                    var values = Data.Select(r => Convert.ToDecimal(r[column.Name])).ToList();
-                    <div class="stat-values">
-                        <div class="stat-item">
-                            <span class="stat-label">Сумма:</span>
-                            <span class="stat-number">@values.Sum()</span>
+            var values = GetNumericValues(column.Name);
+            if (values.Any())
+            {
+                <div class="stat-card">
+                    <div class="card-header">
+                        <i class="fas fa-calculator"></i> @column.Name
+                        <span class="data-type">(числовой)</span>
+                    </div>
+                    
+                    <div class="stats-row">
+                        <div class="stat">
+                            <div class="stat-value">@values.Sum().ToString("N2")</div>
+                            <div class="stat-label">Сумма</div>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Среднее:</span>
-                            <span class="stat-number">@values.Average().ToString("N2")</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Мин:</span>
-                            <span class="stat-number">@values.Min()</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Макс:</span>
-                            <span class="stat-number">@values.Max()</span>
+                        <div class="stat">
+                            <div class="stat-value">@values.Average().ToString("N2")</div>
+                            <div class="stat-label">Среднее</div>
                         </div>
                     </div>
-                }
-                else
-                {
-                    <div class="no-data">Нет данных</div>
-                }
-            </div>
+                    
+                    <div class="stats-row">
+                        <div class="stat">
+                            <div class="stat-value">@values.Min().ToString("N2")</div>
+                            <div class="stat-label">Минимум</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">@values.Max().ToString("N2")</div>
+                            <div class="stat-label">Максимум</div>
+                        </div>
+                    </div>
+                    
+                    <div class="distribution-chart">
+                        <div class="chart-label">Распределение:</div>
+                        <div class="chart-bars">
+                            @foreach (var bar in GetDistributionBars(values, 5))
+                            {
+                                <div class="bar-container">
+                                    <div class="bar" style="height: @bar.Height%"></div>
+                                    <div class="bar-label">@bar.Label</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+        <!-- Блок текстовых полей -->
+        @foreach (var column in Columns.Where(c => !c.IsNumeric))
+        {
+            var values = GetTextValues(column.Name);
+            if (values.Any())
+            {
+                <div class="stat-card">
+                    <div class="card-header">
+                        <i class="fas fa-font"></i> @column.Name
+                        <span class="data-type">(текстовый)</span>
+                    </div>
+                    
+                    <div class="stats-row">
+                        <div class="stat">
+                            <div class="stat-value">@values.Distinct().Count()</div>
+                            <div class="stat-label">Уникальных</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">@GetMostFrequentCount(values)</div>
+                            <div class="stat-label">Частота макс.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="top-values">
+                        <div class="top-label">Частые значения:</div>
+                        <ul>
+                            @foreach (var item in GetTopValues(values, 3))
+                            {
+                                <li>
+                                    <span class="value">@item.Value</span>
+                                    <span class="count">@item.Count</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                    
+                    <div class="length-stats">
+                        <div class="stat">
+                            <div class="stat-value">@GetAverageLength(values).ToString("N1")</div>
+                            <div class="stat-label">Ср. длина</div>
+                        </div>
+                    </div>
+                </div>
+            }
         }
     </div>
-    
+
     <div class="report-footer">
-        <div class="additional-stats">
-            <div class="stat-item">
-                <span class="stat-label">Всего полей:</span>
-                <span class="stat-number">@Columns.Count</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">Числовых полей:</span>
-                <span class="stat-number">@Columns.Count(c => c.IsNumeric)</span>
-            </div>
-        </div>
+        <button class="btn-export" @onclick="ExportToExcel">
+            <i class="fas fa-file-excel"></i> Экспорт в Excel
+        </button>
+        <button class="btn-export" @onclick="ExportToPdf">
+            <i class="fas fa-file-pdf"></i> Экспорт в PDF
+        </button>
     </div>
 </div>
 
-<style>
-    /* Основные стили VK */
-    .vk-style {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        color: #222;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
-    }
-    
-    .report-header {
-        padding: 16px 20px;
-        background: #f9f9f9;
-        border-bottom: 1px solid #e7e8ec;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .report-header h3 {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 500;
-        color: #2a5885;
-    }
-    
-    .report-info {
-        display: flex;
-        gap: 15px;
-        font-size: 13px;
-        color: #656565;
-    }
-    
-    .stats-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 20px;
-        padding: 20px;
-    }
-    
-    .stat-card {
-        border: 1px solid #e7e8ec;
-        border-radius: 8px;
-        overflow: hidden;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .stat-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-    
-    .stat-header {
-        background: #5181b8;
-        color: white;
-        padding: 12px 15px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .stat-icon {
-        font-size: 18px;
-    }
-    
-    .stat-title {
-        font-weight: 500;
-        font-size: 15px;
-    }
-    
-    .stat-values {
-        padding: 15px;
-        background: white;
-    }
-    
-    .stat-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px solid #f0f2f5;
-    }
-    
-    .stat-item:last-child {
-        border-bottom: none;
-    }
-    
-    .stat-label {
-        color: #656565;
-        font-size: 14px;
-    }
-    
-    .stat-number {
-        font-weight: 500;
-        color: #2a5885;
-        font-size: 15px;
-    }
-    
-    .no-data {
-        padding: 15px;
-        text-align: center;
-        color: #999;
-        font-style: italic;
-    }
-    
-    .report-footer {
-        padding: 15px 20px;
-        background: #f9f9f9;
-        border-top: 1px solid #e7e8ec;
-    }
-    
-    .additional-stats {
-        display: flex;
-        gap: 30px;
-        justify-content: center;
-    }
-    
-    .additional-stats .stat-item {
-        border: none;
-        padding: 0;
-    }
-    
-    .additional-stats .stat-label {
-        font-weight: 500;
-        color: #444;
-    }
-    
-    .additional-stats .stat-number {
-        font-weight: 600;
-        color: #5181b8;
-    }
-</style>
-
 @code {
     [Parameter]
-    public List<Dictionary<string, object>> Data { get; set; }
+    public List<Dictionary<string, object>> Data { get; set; } = new();
 
     [Parameter]
-    public List<DatabaseService.ColumnDefinition> Columns { get; set; }
+    public List<DatabaseService.ColumnDefinition> Columns { get; set; } = new();
+
+    [Parameter]
+    public string TableName { get; set; } = "Данные";
+
+    private List<decimal> GetNumericValues(string columnName)
+    {
+        var values = new List<decimal>();
+        foreach (var row in Data)
+        {
+            if (row.TryGetValue(columnName, out var val) && val != null)
+            {
+                if (decimal.TryParse(val.ToString(), out decimal num))
+                {
+                    values.Add(num);
+                }
+            }
+        }
+        return values;
+    }
+    
+    private async Task ExportToPdf()
+    {
+        try
+        {
+            // Генерация PDF
+            var pdfBytes = PdfReport.GenerateSummaryPdfReport(
+                Data,
+                Columns,
+                TableName,
+                Data.Count
+            );
+
+            // Скачивание файла
+            var fileName = $"{TableName}_Summary_{DateTime.Now:yyyyMMdd_HHmm}.pdf";
+            await JSRuntime.InvokeVoidAsync("downloadPdfFile", fileName, Convert.ToBase64String(pdfBytes));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка экспорта в PDF: {ex.Message}");
+        }
+    }
+
+    private List<string> GetTextValues(string columnName)
+    {
+        return Data
+            .Where(row => row.ContainsKey(columnName) && row[columnName] != null)
+            .Select(row => row[columnName].ToString())
+            .ToList();
+    }
+
+    private double CalculateNullPercentage()
+    {
+        if (!Data.Any()) return 0;
+        
+        int totalCells = Data.Count * Columns.Count;
+        int filledCells = 0;
+        
+        foreach (var row in Data)
+        {
+            filledCells += row.Values.Count(v => v != null);
+        }
+        
+        return Math.Round((filledCells / (double)totalCells) * 100, 1);
+    }
+
+    private List<(string Label, int Height)> GetDistributionBars(List<decimal> values, int segments)
+    {
+        if (!values.Any()) return new();
+        
+        decimal min = values.Min();
+        decimal max = values.Max();
+        decimal range = max - min;
+        
+        if (range == 0) return new() { ("100%", 100) };
+        
+        var segmentSize = range / segments;
+        var counts = new int[segments];
+        
+        foreach (var value in values)
+        {
+            int index = Math.Min(segments - 1, (int)((value - min) / segmentSize));
+            counts[index]++;
+        }
+        
+        int maxCount = counts.Max();
+        var result = new List<(string, int)>();
+        
+        for (int i = 0; i < segments; i++)
+        {
+            decimal lower = min + i * segmentSize;
+            decimal upper = lower + segmentSize;
+            string label = $"{lower.ToString("N0")}-{upper.ToString("N0")}";
+            int height = maxCount > 0 ? (int)Math.Round((counts[i] / (double)maxCount) * 100) : 0;
+            result.Add((label, height));
+        }
+        
+        return result;
+    }
+
+    private List<(string Value, int Count)> GetTopValues(List<string> values, int topCount)
+    {
+        return values
+            .GroupBy(v => v)
+            .OrderByDescending(g => g.Count())
+            .Take(topCount)
+            .Select(g => (g.Key, g.Count()))
+            .ToList();
+    }
+
+    private int GetMostFrequentCount(List<string> values)
+    {
+        if (!values.Any()) return 0;
+        return values
+            .GroupBy(v => v)
+            .Max(g => g.Count());
+    }
+
+    private double GetAverageLength(List<string> values)
+    {
+        if (!values.Any()) return 0;
+        return values.Average(v => v.Length);
+    }
+
+    private void ExportToExcel()
+    {
+        // Логика экспорта в Excel
+        Console.WriteLine("Export to Excel triggered");
+    }
 }

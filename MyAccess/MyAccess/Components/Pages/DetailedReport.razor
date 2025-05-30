@@ -1,167 +1,379 @@
 ﻿@using MyAccess.Services
-<div class="detailed-report vk-style">
+@using System.Linq
+@inject PdfReportService PdfService
+@inject IJSRuntime JSRuntime
+
+
+<div class="detailed-report-container">
     <div class="report-header">
-        <h3>Детализированный отчет</h3>
-        <div class="report-info">
-            <span class="record-count">Записей: @Data.Count</span>
+        <h2><i class="fas fa-table"></i> Детализированный отчет</h2>
+        <div class="header-info">
             <span class="timestamp">@DateTime.Now.ToString("dd.MM.yyyy HH:mm")</span>
+            <span class="record-count">Записей: @filteredData.Count</span>
         </div>
     </div>
     
-    <div class="table-container">
-        <table class="report-table">
-            <thead>
-            <tr>
-                @foreach (var column in Columns)
-                {
-                    <th>@column.Name</th>
-                }
-            </tr>
-            </thead>
-            <tbody>
-            @foreach (var row in Data)
+    <div class="report-controls">
+        <div class="export-buttons">
+            <button class="btn-export" @onclick="ExportToPdf">
+                <i class="fas fa-file-pdf"></i> Экспорт в PDF
+            </button>
+        </div>
+        
+        <div class="view-toggle">
+            <button class="view-btn @(viewMode == "cards" ? "active" : "")"
+                    @onclick='() => SetViewMode("cards")'>
+                <i class="fas fa-th"></i> Карточки
+            </button>
+            <button class="view-btn @(viewMode == "table" ? "active" : "")"
+                    @onclick='() => SetViewMode("table")'>
+                <i class="fas fa-table"></i> Таблица
+            </button>
+        </div>
+    </div>
+    
+    @if (viewMode == "cards")
+    {
+        <div class="cards-container">
+            @foreach (var row in filteredData)
             {
-                <tr>
-                    @foreach (var column in Columns)
-                    {
-                        <td>@row[column.Name]?.ToString()</td>
-                    }
-                </tr>
+                <div class="data-card" @onclick="() => ShowDetails(row)">
+                    <div class="card-header">
+                        <span class="card-id">Запись @(filteredData.IndexOf(row) + 1)</span>
+                        <span class="card-status">@GetRowStatus(row)</span>
+                    </div>
+                    
+                    <div class="card-content">
+                        @foreach (var column in primaryColumns)
+                        {
+                            <div class="card-field">
+                                <span class="field-label">@column.Name:</span>
+                                <span class="field-value">@row[column.Name]?.ToString()</span>
+                            </div>
+                        }
+                    </div>
+                    
+                    <div class="card-footer">
+                        <span>Нажмите для деталей</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
             }
-            </tbody>
-        </table>
-    </div>
-    
-    <div class="report-footer">
-        <div class="pagination">
-            <button class="page-btn">←</button>
-            <span class="page-info">1-@Data.Count из @Data.Count</span>
-            <button class="page-btn">→</button>
         </div>
-    </div>
+        
+        <div class="pagination">
+            <button class="page-btn" @onclick="PreviousPage" :disabled="currentPage == 1">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                <button class="page-btn @(i == currentPage ? "active" : "")" @onclick="() => GoToPage(i)">
+                    @i
+                </button>
+            }
+            
+            <button class="page-btn" @onclick="NextPage" :disabled="currentPage == totalPages">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="table-container">
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        @foreach (var column in primaryColumns)
+                        {
+                            <th @onclick="() => SortData(column.Name)">
+                                @column.Name
+                                @if (sortColumn == column.Name)
+                                {
+                                    <i class="fas @(sortAscending ? "fa-arrow-up" : "fa-arrow-down")"></i>
+                                }
+                            </th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in pagedData)
+                    {
+                        <tr @onclick="() => ShowDetails(row)">
+                            @foreach (var column in primaryColumns)
+                            {
+                                <td>
+                                    @if (IsNumericColumn(column.Name))
+                                    {
+                                        <span class="numeric-value">@row[column.Name]?.ToString()</span>
+                                    }
+                                    else
+                                    {
+                                        @row[column.Name]?.ToString()
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+        @* <div class="pagination"> *@
+        @*     <button class="page-btn" @onclick="PreviousPage" disabled="@(currentPage == 1)"> *@
+        @*         <i class="fas fa-chevron-left"></i> *@
+        @*     </button> *@
+        @* *@
+        @*     @for (int i = 1; i <= totalPages; i++) *@
+        @*     { *@
+        @*         <button class="page-btn @(i == currentPage ? "active" : "")" @onclick="() => GoToPage(i)"> *@
+        @*             @i *@
+        @*         </button> *@
+        @*     } *@
+        @* *@
+        @*     <button class="page-btn" @onclick="NextPage" disabled="@(currentPage == totalPages)"> *@
+        @*         <i class="fas fa-chevron-right"></i> *@
+        @*     </button> *@
+        @* *@
+        @*     <div class="page-size"> *@
+        @*         <span>Строк на странице:</span> *@
+        @*         <select @bind="pageSize" @bind:event="onchange"> *@
+        @*             <option value="10">10</option> *@
+        @*             <option value="20">20</option> *@
+        @*             <option value="50">50</option> *@
+        @*         </select> *@
+        @*     </div> *@
+        @* </div> *@
+    }
 </div>
 
-<style>
-    /* Основные стили VK */
-    .vk-style {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        color: #222;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-        overflow: hidden;
-    }
-    
-    .report-header {
-        padding: 16px 20px;
-        background: #f9f9f9;
-        border-bottom: 1px solid #e7e8ec;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .report-header h3 {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 500;
-        color: #2a5885;
-    }
-    
-    .report-info {
-        display: flex;
-        gap: 15px;
-        font-size: 13px;
-        color: #656565;
-    }
-    
-    .table-container {
-        overflow-x: auto;
-        max-height: 70vh;
-    }
-    
-    .report-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        font-size: 14px;
-    }
-    
-    .report-table th {
-        background-color: #5181b8;
-        color: white;
-        font-weight: 500;
-        text-align: left;
-        padding: 12px 15px;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-    }
-    
-    .report-table th:first-child {
-        border-top-left-radius: 4px;
-    }
-    
-    .report-table th:last-child {
-        border-top-right-radius: 4px;
-    }
-    
-    .report-table td {
-        padding: 10px 15px;
-        border-bottom: 1px solid #e7e8ec;
-        background: white;
-    }
-    
-    .report-table tr:nth-child(even) td {
-        background-color: #f9f9f9;
-    }
-    
-    .report-table tr:hover td {
-        background-color: #f0f2f5;
-    }
-    
-    .report-footer {
-        padding: 12px 20px;
-        background: #f9f9f9;
-        border-top: 1px solid #e7e8ec;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .pagination {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .page-btn {
-        width: 30px;
-        height: 30px;
-        border: 1px solid #d3d9de;
-        border-radius: 4px;
-        background: white;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .page-btn:hover {
-        background-color: #f0f2f5;
-        border-color: #b8c1cc;
-    }
-    
-    .page-info {
-        font-size: 13px;
-        color: #656565;
-    }
-</style>
+@if (showDetails && selectedRow != null)
+{
+    <div class="modal-backdrop" @onclick="CloseDetails">
+        <div class="modal-content" @onclick:stopPropagation>
+            <div class="modal-header">
+                <h3>Детали записи</h3>
+                <button class="close-btn" @onclick="CloseDetails">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="detail-grid">
+                    @foreach (var column in Columns)
+                    {
+                        <div class="detail-item">
+                            <div class="detail-label">@column.Name</div>
+                            <div class="detail-value">
+                                @if (IsNumericColumn(column.Name))
+                                {
+                                    <span class="numeric-value">@selectedRow[column.Name]?.ToString()</span>
+                                }
+                                else
+                                {
+                                    @selectedRow[column.Name]?.ToString()
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     [Parameter]
-    public List<Dictionary<string, object>> Data { get; set; }
+    public List<Dictionary<string, object>> Data { get; set; } = new();
 
     [Parameter]
-    public List<DatabaseService.ColumnDefinition> Columns { get; set; }
+    public List<DatabaseService.ColumnDefinition> Columns { get; set; } = new();
+
+    // Состояние отчета
+    private List<Dictionary<string, object>> filteredData = new();
+    private List<Dictionary<string, object>> pagedData = new();
+    private string viewMode = "cards";
+    private string searchQuery = "";
+    private string sortColumn = "";
+    private bool sortAscending = true;
+    private int currentPage = 1;
+    private int totalPages = 1;
+    
+    // Детали записи
+    private bool showDetails = false;
+    private Dictionary<string, object>? selectedRow = null;
+    
+    // Основные колонки (первые 5 или все если меньше)
+    private List<DatabaseService.ColumnDefinition> primaryColumns = new();
+    
+    private int _pageSize = 10;
+    private int pageSize
+    {
+        get => _pageSize;
+        set
+        {
+            if (_pageSize != value)
+            {
+                _pageSize = value;
+                currentPage = 1; // Сбрасываем на первую страницу
+                UpdateFilteredData();
+            }
+        }
+    }
+    
+    private async Task ExportToPdf()
+    {
+        if (filteredData == null || !filteredData.Any())
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Нет данных для экспорта");
+            return;
+        }
+
+        try
+        {
+            // Генерация PDF
+            var pdfBytes = PdfService.GenerateDetailedReportPdf(
+                title: "Детализированный отчет",
+                tableName: "Данные таблицы", // Здесь можно добавить параметр для имени таблицы
+                timestamp: DateTime.Now.ToString("dd.MM.yyyy HH:mm"),
+                recordCount: filteredData.Count,
+                columns: Columns,
+                data: filteredData
+            );
+
+            // Скачивание файла
+            var fileName = $"Детализированный_отчет_{DateTime.Now:yyyyMMdd_HHmm}.pdf";
+            await JSRuntime.InvokeVoidAsync("downloadPdfFile", fileName, Convert.ToBase64String(pdfBytes));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка экспорта в PDF: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", $"Ошибка экспорта: {ex.Message}");
+        }
+    }
+    
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        
+        // Основные колонки
+        primaryColumns = Columns.Take(5).ToList();
+        
+        UpdateFilteredData();
+    }
+    
+    private void UpdateFilteredData()
+    {
+        // Применение поиска
+        var result = Data;
+        
+        if (!string.IsNullOrEmpty(searchQuery))
+        {
+            var query = searchQuery.ToLower();
+            result = result.Where(row => 
+                row.Values.Any(v => 
+                    v?.ToString()?.ToLower().Contains(query) ?? false
+                )
+            ).ToList();
+        }
+        
+        // Сортировка
+        if (!string.IsNullOrEmpty(sortColumn))
+        {
+            result = sortAscending 
+                ? result.OrderBy(row => row.ContainsKey(sortColumn) ? row[sortColumn] : null).ToList()
+                : result.OrderByDescending(row => row.ContainsKey(sortColumn) ? row[sortColumn] : null).ToList();
+        }
+        
+        filteredData = result;
+        
+        // Пагинация
+        totalPages = (int)Math.Ceiling((double)filteredData.Count / pageSize);
+        currentPage = Math.Max(1, Math.Min(currentPage, totalPages));
+        pagedData = filteredData.Skip((currentPage - 1) * pageSize).Take(pageSize).ToList();
+    }
+    
+    private void SortData(string column)
+    {
+        if (sortColumn == column)
+        {
+            sortAscending = !sortAscending;
+        }
+        else
+        {
+            sortColumn = column;
+            sortAscending = true;
+        }
+        
+        UpdateFilteredData();
+    }
+    
+    private void SetViewMode(string mode)
+    {
+        viewMode = mode;
+    }
+    
+    private bool IsNumericColumn(string column)
+    {
+        return Columns.Any(c => c.Name == column && c.IsNumeric);
+    }
+    
+    // Навигация по записям
+    private void ShowDetails(Dictionary<string, object> row)
+    {
+        selectedRow = row;
+        showDetails = true;
+    }
+    
+    private void CloseDetails()
+    {
+        showDetails = false;
+        selectedRow = null;
+    }
+    
+    private string GetRowStatus(Dictionary<string, object> row)
+    {
+        // Простой пример: если есть колонка "Status", используем её
+        if (row.ContainsKey("Status")) 
+            return row["Status"].ToString();
+        
+        // Или генерируем статус на основе данных
+        var numericColumns = Columns.Where(c => c.IsNumeric).ToList();
+        if (numericColumns.Count > 0)
+        {
+            var value = row[numericColumns[0].Name];
+            if (value != null && decimal.TryParse(value.ToString(), out decimal num))
+            {
+                return num > 0 ? "Активно" : "Неактивно";
+            }
+        }
+        
+        return "Нет статуса";
+    }
+    
+    // Навигация по страницам
+    private void GoToPage(int page)
+    {
+        currentPage = page;
+        UpdateFilteredData();
+    }
+    
+    private void NextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            currentPage++;
+            UpdateFilteredData();
+        }
+    }
+    
+    private void PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            UpdateFilteredData();
+        }
+    }
 }
+

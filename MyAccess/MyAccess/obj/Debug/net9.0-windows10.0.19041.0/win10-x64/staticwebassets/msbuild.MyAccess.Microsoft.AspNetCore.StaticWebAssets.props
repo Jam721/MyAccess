@@ -102,8 +102,8 @@
       <RelatedAsset></RelatedAsset>
       <AssetTraitName></AssetTraitName>
       <AssetTraitValue></AssetTraitValue>
-      <Fingerprint>dfdaskgryo</Fingerprint>
-      <Integrity>eY6dYFDQ+1UfQDMWh/dM1Dd+jB+f06AFGcOhvuQVhhk=</Integrity>
+      <Fingerprint>1lu2wjt7j6</Fingerprint>
+      <Integrity>qxwsh5CZedTV6s5XjhofeBmFsbNbtdGc5loZ4DcxxDc=</Integrity>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\index.html'))</OriginalItemSpec>
@@ -120,11 +120,29 @@
       <RelatedAsset></RelatedAsset>
       <AssetTraitName>ScopedCss</AssetTraitName>
       <AssetTraitValue>ApplicationBundle</AssetTraitValue>
-      <Fingerprint>kq07mrfl47</Fingerprint>
-      <Integrity>fFHVYGXPdJIroCO8ihUdiU/xkpVEUfG8Z3AiaeRRRNo=</Integrity>
+      <Fingerprint>juc2vkn2x9</Fingerprint>
+      <Integrity>dRMzEakoRwOAGrGgAzq5YqVUBz/nSnO60U3MeDhmAhE=</Integrity>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\MyAccess.styles.css'))</OriginalItemSpec>
+    </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\_content\MyApp\chartInterop.js'))">
+      <SourceType>Package</SourceType>
+      <SourceId>MyAccess</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>/</BasePath>
+      <RelativePath>_content/MyApp/chartInterop.js</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <Fingerprint>tgw32g03as</Fingerprint>
+      <Integrity>HQklDMYKXKlSHC0ofq1b2AIusdYAbfzDzv0PnYaDTeY=</Integrity>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\_content\MyApp\chartInterop.js'))</OriginalItemSpec>
     </StaticWebAsset>
   </ItemGroup>
 </Project>

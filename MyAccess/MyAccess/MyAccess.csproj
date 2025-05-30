@@ -60,10 +60,13 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="iTextSharp.LGPLv2.Core" Version="3.7.4" />
         <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
         <PackageReference Include="Npgsql" Version="9.0.3" />
+        <PackageReference Include="QuestPDF" Version="2025.5.0" />
+        <PackageReference Include="SkiaSharp" Version="3.119.0" />
     </ItemGroup>
 
 </Project>

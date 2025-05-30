@@ -13,6 +13,9 @@
           "Microsoft.Extensions.Logging.Debug": "9.0.0",
           "Microsoft.Maui.Controls": "9.0.51",
           "Npgsql": "9.0.3",
+          "QuestPDF": "2025.5.0",
+          "SkiaSharp": "3.119.0",
+          "iTextSharp.LGPLv2.Core": "3.7.4",
           "Microsoft.Web.WebView2.Core.Projection": "1.0.2903.40",
           "runtimepack.Microsoft.Windows.SDK.NET.Ref": "10.0.19041.57"
         },
@@ -29,6 +32,26 @@
           "WinRT.Runtime.dll": {
             "assemblyVersion": "2.2.0.0",
             "fileVersion": "2.2.0.48161"
+          }
+        }
+      },
+      "BouncyCastle.Cryptography/2.6.1": {
+        "runtime": {
+          "lib/net6.0/BouncyCastle.Cryptography.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.6.1.59591"
+          }
+        }
+      },
+      "iTextSharp.LGPLv2.Core/3.7.4": {
+        "dependencies": {
+          "BouncyCastle.Cryptography": "2.6.1",
+          "SkiaSharp": "3.119.0"
+        },
+        "runtime": {
+          "lib/net9.0/iTextSharp.LGPLv2.Core.dll": {
+            "assemblyVersion": "3.7.4.0",
+            "fileVersion": "3.7.4.0"
           }
         }
       },
@@ -646,6 +669,49 @@
           }
         }
       },
+      "QuestPDF/2025.5.0": {
+        "runtime": {
+          "lib/net8.0/QuestPDF.dll": {
+            "assemblyVersion": "2025.5.0.0",
+            "fileVersion": "2025.5.0.0"
+          }
+        },
+        "native": {
+          "runtimes/win-x64/native/QuestPdfSkia.dll": {
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x64/native/libgcc_s_seh-1.dll": {
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x64/native/libstdc++-6.dll": {
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/win-x64/native/libwinpthread-1.dll": {
+            "fileVersion": "1.0.0.0"
+          },
+          "runtimes/win-x64/native/qpdf.dll": {
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
+      "SkiaSharp/3.119.0": {
+        "dependencies": {
+          "SkiaSharp.NativeAssets.Win32": "3.119.0"
+        },
+        "runtime": {
+          "lib/net8.0-windows10.0.19041/SkiaSharp.dll": {
+            "assemblyVersion": "3.119.0.0",
+            "fileVersion": "3.119.0.0"
+          }
+        }
+      },
+      "SkiaSharp.NativeAssets.Win32/3.119.0": {
+        "native": {
+          "runtimes/win-x64/native/libSkiaSharp.dll": {
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      },
       "Microsoft.Web.WebView2.Core.Projection/1.0.2903.40": {
         "runtime": {
           "Microsoft.Web.WebView2.Core.Projection.dll": {
@@ -666,6 +732,20 @@
       "type": "runtimepack",
       "serviceable": false,
       "sha512": ""
+    },
+    "BouncyCastle.Cryptography/2.6.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-vZsG2YILhthgRqO+ZVgRff4ZFKKTl0v7kqaVBLCtRvpREhfBP33pcWrdA3PRYgWuFL1RxiUFvjMUHTdBZlJcoA==",
+      "path": "bouncycastle.cryptography/2.6.1",
+      "hashPath": "bouncycastle.cryptography.2.6.1.nupkg.sha512"
+    },
+    "iTextSharp.LGPLv2.Core/3.7.4": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-uMkrgvanNij/sC854OxsD5BZJL8sq3OihBs58pHblmlPHBZ3nVKI2HZRIQcarwUkc4GokaNOArZv7toQJV8HAQ==",
+      "path": "itextsharp.lgplv2.core/3.7.4",
+      "hashPath": "itextsharp.lgplv2.core.3.7.4.nupkg.sha512"
     },
     "Microsoft.AspNetCore.Authorization/9.0.0": {
       "type": "package",
@@ -953,6 +1033,27 @@
       "sha512": "sha512-tPvY61CxOAWxNsKLEBg+oR646X4Bc8UmyQ/tJszL/7mEmIXQnnBhVJZrZEEUv0Bstu0mEsHZD5At3EO8zQRAYw==",
       "path": "npgsql/9.0.3",
       "hashPath": "npgsql.9.0.3.nupkg.sha512"
+    },
+    "QuestPDF/2025.5.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-/FHAx7EUSv9Ir7RO7qHIvlQbU/2/zcHcCm8q9qTi1MmKp+rk1FQhVvtx1N/hPJmdgKLnor+7kAqyUf84OUyKIw==",
+      "path": "questpdf/2025.5.0",
+      "hashPath": "questpdf.2025.5.0.nupkg.sha512"
+    },
+    "SkiaSharp/3.119.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-gR9yVoOta2Mc1Rxt15LD65AckfHMfwjIs/3kkD59C9bT2nYYISsE6uz3t4aMPNHA6CgsIL0Ssn+jE5OVilZ1yw==",
+      "path": "skiasharp/3.119.0",
+      "hashPath": "skiasharp.3.119.0.nupkg.sha512"
+    },
+    "SkiaSharp.NativeAssets.Win32/3.119.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-IwC9yx36lOdXVT2DjgmWHl1qkVspfj8ctd4+li8CNnvqdfaTolXCOh6TLznURcPAvzatx9K/tLOB7zT6T8EA9w==",
+      "path": "skiasharp.nativeassets.win32/3.119.0",
+      "hashPath": "skiasharp.nativeassets.win32.3.119.0.nupkg.sha512"
     },
     "Microsoft.Web.WebView2.Core.Projection/1.0.2903.40": {
       "type": "reference",

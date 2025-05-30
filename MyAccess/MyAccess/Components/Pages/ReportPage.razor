@@ -5,14 +5,14 @@
 @using MyAccess.Components.Pages
 @inject DatabaseService DbService
 @inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject PdfReportService PdfService
 
 <div class="report-container">
     <div class="report-header">
         <h2>Отчет: @TableName - @GetReportTypeName()</h2>
         <div class="report-actions">
             <button class="back-btn" @onclick="NavigateBack">← Назад</button>
-            <button class="print-btn" @onclick="PrintReport">🖨️ Печать</button>
-            <button class="export-btn" @onclick="ExportReport">📥 Экспорт</button>
         </div>
     </div>
 
@@ -29,18 +29,20 @@
     }
     else
     {
-        @switch (ReportType)
-        {
-            case "Summary":
-                <SummaryReport Data="reportData" Columns="tableColumns" />
-                break;
-            case "Detailed":
-                <DetailedReport Data="reportData" Columns="tableColumns" />
-                break;
-            case "Chart":
-                <ChartReport Data="reportData" Columns="tableColumns" />
-                break;
-        }
+        <div id="report-content">
+            @switch (ReportType)
+            {
+                case "Summary":
+                    <SummaryReport Data="reportData" Columns="tableColumns" />
+                    break;
+                case "Detailed":
+                    <DetailedReport Data="reportData" Columns="tableColumns" />
+                    break;
+                case "Chart":
+                    <ChartReport Data="reportData" Columns="tableColumns" />
+                    break;
+            }
+        </div>
     }
 </div>
 
@@ -102,13 +104,43 @@
 
     private void PrintReport()
     {
-        // Логика печати отчета
-        Console.WriteLine("Печать отчета...");
+        JSRuntime.InvokeVoidAsync("window.print");
     }
 
-    private void ExportReport()
+    private async Task ExportReport()
     {
-        // Логика экспорта отчета
-        Console.WriteLine("Экспорт отчета...");
+        if (reportData == null || reportData.Count == 0)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Нет данных для экспорта");
+            return;
+        }
+
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            // Генерация PDF
+            var pdfBytes = PdfService.GeneratePdfReport(
+                reportData,
+                tableColumns,
+                ReportType,
+                $"{DbName} - {TableName}",
+                GetReportTypeName()
+            );
+
+            // Скачивание файла
+            var fileName = $"{DbName}_{TableName}_{ReportType}_{DateTime.Now:yyyyMMdd_HHmm}.pdf";
+            await JSRuntime.InvokeVoidAsync("downloadPdfFile", fileName, Convert.ToBase64String(pdfBytes));
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Ошибка экспорта: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
     }
 }
