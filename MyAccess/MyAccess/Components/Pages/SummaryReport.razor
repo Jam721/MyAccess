@@ -1,5 +1,8 @@
-﻿@using MyAccess.Services
+﻿@using System.Collections.Concurrent
+@using System.Globalization
+@using MyAccess.Services
 @using System.Linq
+@using System.Text.RegularExpressions
 @inject IJSRuntime JSRuntime
 @inject PdfReportService PdfReport
 
@@ -54,7 +57,7 @@
             {
                 <div class="stat-card">
                     <div class="card-header">
-                        <i class="fas fa-calculator"></i> @column.Name
+                        <i class="fas fa-calculator"></i> @GetColumnTranslation(column.Name)
                         <span class="data-type">(числовой)</span>
                     </div>
                     
@@ -104,7 +107,7 @@
             {
                 <div class="stat-card">
                     <div class="card-header">
-                        <i class="fas fa-font"></i> @column.Name
+                        <i class="fas fa-font"></i> @GetColumnTranslation(column.Name)
                         <span class="data-type">(текстовый)</span>
                     </div>
                     
@@ -144,9 +147,6 @@
     </div>
 
     <div class="report-footer">
-        <button class="btn-export" @onclick="ExportToExcel">
-            <i class="fas fa-file-excel"></i> Экспорт в Excel
-        </button>
         <button class="btn-export" @onclick="ExportToPdf">
             <i class="fas fa-file-pdf"></i> Экспорт в PDF
         </button>
@@ -162,6 +162,67 @@
 
     [Parameter]
     public string TableName { get; set; } = "Данные";
+    
+    private readonly ConcurrentDictionary<string, string> _translationCache = new();
+    
+    private string AutoTranslateColumn(string columnName)
+    {
+        var cleanName = Regex.Replace(columnName, "[^a-zA-Zа-яА-Я0-9]", " ");
+        cleanName = Regex.Replace(cleanName, "([a-zа-я])([A-ZА-Я])", "$1 $2");
+        cleanName = cleanName.Replace("_", " ");
+        
+        var dictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            {"id", "ИД"},
+            {"name", "Имя"},
+            {"date", "Дата"},
+            {"time", "Время"},
+            {"count", "Количество"},
+            {"price", "Цена"},
+            {"total", "Итого"},
+            {"sum", "Сумма"},
+            {"amount", "Сумма"},
+            {"created", "Создано"},
+            {"modified", "Изменено"},
+            {"status", "Статус"},
+            {"type", "Тип"},
+            {"desc", "Описание"},
+            {"description", "Описание"},
+            {"is", "Флаг"},
+            {"num", "Номер"},
+            {"text", "Текст"},
+            {"Tariff", "Тариф"},
+            {"Minutes", "Минуты"},
+            {"Internet", "Интернет"},
+            {"gb", "гб"},
+            {"Contract", "Контракт"},
+            {"operator", "Оператор"},
+            {"client", "Клиент"},
+            {"last", "Последнее"},
+            {"phone", "Телефон"},
+            {"country","Страна"},
+            {"call", "Звонок"},
+            {"duration", "Длительность"}
+        };
+        
+        var words = cleanName.Split(' ');
+        for (int i = 0; i < words.Length; i++)
+        {
+            if (dictionary.TryGetValue(words[i], out var translation))
+            {
+                words[i] = translation;
+            }
+        }
+        
+        string result = string.Join(" ", words);
+        return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(result.ToLower());
+    }
+    
+    private string GetColumnTranslation(string columnName)
+    {
+        return _translationCache.GetOrAdd(columnName, AutoTranslateColumn);
+    }
+    
 
     private List<decimal> GetNumericValues(string columnName)
     {

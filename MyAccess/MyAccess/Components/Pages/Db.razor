@@ -1,6 +1,9 @@
 ﻿@page "/database/{DbName}"
 @inherits ComponentBase
 @namespace MyAccess.Pages
+@using System.Collections.Concurrent
+@using System.Globalization
+@using System.Text.RegularExpressions
 @using MyAccess.Services
 @inject DatabaseService DbService
 @inject NavigationManager Navigation
@@ -18,7 +21,7 @@
     {
         <div class="db-header">
             <div class="header-left">
-                <h1>@DbName</h1>
+                <h1>@GetColumnTranslation(DbName)</h1>
                 <div class="tables-count">Таблиц: @tables.Count</div>
             </div>
             <div class="header-right">
@@ -44,7 +47,7 @@
                     <div class="table-content cursor-pointer" 
                          @onclick="() => NavigateToTable(table)">
                         <div class="table-icon">📑</div>
-                        <div class="table-name">@table</div>
+                        <div class="table-name">@GetColumnTranslation(table)</div>
                     </div>
                 </div>
             }
@@ -101,7 +104,7 @@
                                             <option value="">Выберите таблицу</option>
                                             @foreach (var table in availableTablesAndColumns.Keys.Where(t => t != newTableName))
                                             {
-                                                <option value="@table">@table</option>
+                                                <option value="@table">@GetColumnTranslation(table)</option>
                                             }
                                         </select>
 
@@ -111,7 +114,7 @@
                                                 <option value="">Выберите колонку</option>
                                                 @foreach (var col in availableTablesAndColumns[column.ForeignTable])
                                                 {
-                                                    <option value="@col">@col</option>
+                                                    <option value="@col">@GetColumnTranslation(col)</option>
                                                 }
                                             </select>
                                         }
@@ -159,6 +162,70 @@
     private string errorMessage;
     
     private Dictionary<string, List<string>> availableTablesAndColumns = new();
+    
+    private readonly ConcurrentDictionary<string, string> _translationCache = new();
+    
+    private string AutoTranslateColumn(string columnName)
+    {
+        var cleanName = Regex.Replace(columnName, "[^a-zA-Zа-яА-Я0-9]", " ");
+        cleanName = Regex.Replace(cleanName, "([a-zа-я])([A-ZА-Я])", "$1 $2");
+        //cleanName = cleanName.Replace("", " ");
+        
+        var dictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            {"id", "ИД"},
+            {"name", "Имя"},
+            {"date", "Дата"},
+            {"time", "Время"},
+            {"count", "Количество"},
+            {"price", "Цена"},
+            {"total", "Итого"},
+            {"sum", "Сумма"},
+            {"amount", "Сумма"},
+            {"created", "Создано"},
+            {"modified", "Изменено"},
+            {"status", "Статус"},
+            {"type", "Тип"},
+            {"desc", "Описание"},
+            {"description", "Описание"},
+            {"is", "Флаг"},
+            {"num", "Номер"},
+            {"text", "Текст"},
+            {"Tariffs", "Тарифы"},
+            {"Minutes", "Минуты"},
+            {"Internet", "Интернет"},
+            {"gb", "гб"},
+            {"Contracts", "Контракты"},
+            {"operators", "Операторы"},
+            {"clients", "Клиенты"},
+            {"client", "Клиент"},
+            {"operator", "Оператор"},
+            {"last", "Последнее"},
+            {"phone", "Телефон"},
+            {"country","Страна"},
+            {"calls", "Звоноки"},
+            {"duration", "Длительность"},
+            {"telecom", "Телеком"},
+            {"db", "бд"}
+        };
+        
+        var words = cleanName.Split(' ');
+        for (int i = 0; i < words.Length; i++)
+        {
+            if (dictionary.TryGetValue(words[i], out var translation))
+            {
+                words[i] = translation;
+            }
+        }
+        
+        string result = string.Join(" ", words);
+        return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(result.ToLower());
+    }
+    
+    private string GetColumnTranslation(string columnName)
+    {
+        return _translationCache.GetOrAdd(columnName, AutoTranslateColumn);
+    }
     
     private async Task LoadAvailableTablesAndColumns()
     {

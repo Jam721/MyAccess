@@ -120,8 +120,8 @@
       <RelatedAsset></RelatedAsset>
       <AssetTraitName>ScopedCss</AssetTraitName>
       <AssetTraitValue>ApplicationBundle</AssetTraitValue>
-      <Fingerprint>juc2vkn2x9</Fingerprint>
-      <Integrity>dRMzEakoRwOAGrGgAzq5YqVUBz/nSnO60U3MeDhmAhE=</Integrity>
+      <Fingerprint>wpa6ahnbhy</Fingerprint>
+      <Integrity>PCb2WJADWbrGd5LnDCDFDwkV730Yl8dSR050L0obU7A=</Integrity>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\MyAccess.styles.css'))</OriginalItemSpec>

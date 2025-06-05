@@ -394,6 +394,72 @@ public class DatabaseService
         
         await command.ExecuteNonQueryAsync();
     }
+    
+    public class ForeignKeyInfo
+    {
+        public string ColumnName { get; set; }
+        public string ReferencedTable { get; set; }
+        public string ReferencedColumn { get; set; }
+    }
+
+    public async Task<List<ForeignKeyInfo>> GetForeignKeysAsync(string dbName, string tableName)
+    {
+        
+        await using var connection = new NpgsqlConnection(GetConnectionString(dbName));
+        await connection.OpenAsync();
+
+        var sql = @"
+            SELECT 
+                kcu.column_name AS fk_column,
+                ccu.table_name AS ref_table,
+                ccu.column_name AS ref_column
+            FROM 
+                information_schema.table_constraints AS tc 
+                JOIN information_schema.key_column_usage AS kcu
+                    ON tc.constraint_name = kcu.constraint_name
+                    AND tc.table_schema = kcu.table_schema
+                JOIN information_schema.constraint_column_usage AS ccu
+                    ON ccu.constraint_name = tc.constraint_name
+                    AND ccu.table_schema = tc.table_schema
+            WHERE 
+                tc.constraint_type = 'FOREIGN KEY' 
+                AND tc.table_name = @tableName;
+        ";
+
+        await using var cmd = new NpgsqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("tableName", tableName);
+        
+        var foreignKeys = new List<ForeignKeyInfo>();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        
+        while (await reader.ReadAsync())
+        {
+            foreignKeys.Add(new ForeignKeyInfo
+            {
+                ColumnName = reader.GetString(0),
+                ReferencedTable = reader.GetString(1),
+                ReferencedColumn = reader.GetString(2)
+            });
+        }
+        
+        return foreignKeys;
+    }
+
+    public async Task<Dictionary<string, List<Dictionary<string, object>>>> GetReferenceDataAsync(
+        string dbName, 
+        List<ForeignKeyInfo> foreignKeys)
+    {
+        var result = new Dictionary<string, List<Dictionary<string, object>>>();
+        
+        foreach (var fk in foreignKeys)
+        {
+            // Получаем данные для каждой связанной таблицы
+            var data = await GetTableDataAsync(dbName, fk.ReferencedTable);
+            result[fk.ColumnName] = data;
+        }
+        
+        return result;
+    }
 
     public class ColumnDefinition
     {

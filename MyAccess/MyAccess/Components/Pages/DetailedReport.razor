@@ -1,5 +1,8 @@
-﻿@using MyAccess.Services
+﻿@using System.Collections.Concurrent
+@using System.Globalization
+@using MyAccess.Services
 @using System.Linq
+@using System.Text.RegularExpressions
 @inject PdfReportService PdfService
 @inject IJSRuntime JSRuntime
 
@@ -14,11 +17,7 @@
     </div>
     
     <div class="report-controls">
-        <div class="export-buttons">
-            <button class="btn-export" @onclick="ExportToPdf">
-                <i class="fas fa-file-pdf"></i> Экспорт в PDF
-            </button>
-        </div>
+        
         
         <div class="view-toggle">
             <button class="view-btn @(viewMode == "cards" ? "active" : "")"
@@ -47,8 +46,8 @@
                         @foreach (var column in primaryColumns)
                         {
                             <div class="card-field">
-                                <span class="field-label">@column.Name:</span>
-                                <span class="field-value">@row[column.Name]?.ToString()</span>
+                                <span class="field-label">@GetColumnTranslation(column.Name):</span>
+                                <span class="field-value">@row[GetColumnTranslation(column.Name)]?.ToString()</span>
                             </div>
                         }
                     </div>
@@ -105,7 +104,7 @@
                                 <td>
                                     @if (IsNumericColumn(column.Name))
                                     {
-                                        <span class="numeric-value">@row[column.Name]?.ToString()</span>
+                                        <span class="numeric-value">@row[GetColumnTranslation(column.Name)]?.ToString()</span>
                                     }
                                     else
                                     {
@@ -119,32 +118,37 @@
             </table>
         </div>
         
-        @* <div class="pagination"> *@
-        @*     <button class="page-btn" @onclick="PreviousPage" disabled="@(currentPage == 1)"> *@
-        @*         <i class="fas fa-chevron-left"></i> *@
-        @*     </button> *@
-        @* *@
-        @*     @for (int i = 1; i <= totalPages; i++) *@
-        @*     { *@
-        @*         <button class="page-btn @(i == currentPage ? "active" : "")" @onclick="() => GoToPage(i)"> *@
-        @*             @i *@
-        @*         </button> *@
-        @*     } *@
-        @* *@
-        @*     <button class="page-btn" @onclick="NextPage" disabled="@(currentPage == totalPages)"> *@
-        @*         <i class="fas fa-chevron-right"></i> *@
-        @*     </button> *@
-        @* *@
-        @*     <div class="page-size"> *@
-        @*         <span>Строк на странице:</span> *@
-        @*         <select @bind="pageSize" @bind:event="onchange"> *@
-        @*             <option value="10">10</option> *@
-        @*             <option value="20">20</option> *@
-        @*             <option value="50">50</option> *@
-        @*         </select> *@
-        @*     </div> *@
-        @* </div> *@
+        <div class="pagination">
+            <button class="page-btn" @onclick="PreviousPage" disabled="@(currentPage == 1)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                <button class="page-btn @(i == currentPage ? "active" : "")" @onclick="() => GoToPage(i)">
+                    @i
+                </button>
+            }
+        
+            <button class="page-btn" @onclick="NextPage" disabled="@(currentPage == totalPages)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        
+            <div class="page-size">
+                <span>Строк на странице:</span>
+                <select @bind="pageSize" @bind:event="onchange">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+        </div>
     }
+    <div class="export-buttons">
+        <button class="btn-export" @onclick="ExportToPdf">
+            <i class="fas fa-file-pdf"></i> Экспорт в PDF
+        </button>
+    </div>
 </div>
 
 @if (showDetails && selectedRow != null)
@@ -205,6 +209,66 @@
     
     // Основные колонки (первые 5 или все если меньше)
     private List<DatabaseService.ColumnDefinition> primaryColumns = new();
+    
+    private readonly ConcurrentDictionary<string, string> _translationCache = new();
+    
+    private string AutoTranslateColumn(string columnName)
+    {
+        var cleanName = Regex.Replace(columnName, "[^a-zA-Zа-яА-Я0-9]", " ");
+        cleanName = Regex.Replace(cleanName, "([a-zа-я])([A-ZА-Я])", "$1 $2");
+        cleanName = cleanName.Replace("_", " ");
+        
+        var dictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            {"id", "ИД"},
+            {"name", "Имя"},
+            {"date", "Дата"},
+            {"time", "Время"},
+            {"count", "Количество"},
+            {"price", "Цена"},
+            {"total", "Итого"},
+            {"sum", "Сумма"},
+            {"amount", "Сумма"},
+            {"created", "Создано"},
+            {"modified", "Изменено"},
+            {"status", "Статус"},
+            {"type", "Тип"},
+            {"desc", "Описание"},
+            {"description", "Описание"},
+            {"is", "Флаг"},
+            {"num", "Номер"},
+            {"text", "Текст"},
+            {"Tariff", "Тариф"},
+            {"Minutes", "Минуты"},
+            {"Internet", "Интернет"},
+            {"gb", "гб"},
+            {"Contract", "Контракт"},
+            {"operator", "Оператор"},
+            {"client", "Клиент"},
+            {"last", "Последнее"},
+            {"phone", "Телефон"},
+            {"country","Страна"},
+            {"call", "Звонок"},
+            {"duration", "Длительность"}
+        };
+        
+        var words = cleanName.Split(' ');
+        for (int i = 0; i < words.Length; i++)
+        {
+            if (dictionary.TryGetValue(words[i], out var translation))
+            {
+                words[i] = translation;
+            }
+        }
+        
+        string result = string.Join(" ", words);
+        return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(result.ToLower());
+    }
+    
+    private string GetColumnTranslation(string columnName)
+    {
+        return _translationCache.GetOrAdd(columnName, AutoTranslateColumn);
+    }
     
     private int _pageSize = 10;
     private int pageSize

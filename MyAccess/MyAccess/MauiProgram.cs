@@ -20,7 +20,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<AuthService>();
 		builder.Services.AddSingleton(provider => {
 			var authService = provider.GetRequiredService<AuthService>();
-			return new DatabaseService("Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=Artur-123", authService);
+			return new DatabaseService("Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=123", authService);
 		});
 		builder.Services.AddScoped<PdfReportService>();
 

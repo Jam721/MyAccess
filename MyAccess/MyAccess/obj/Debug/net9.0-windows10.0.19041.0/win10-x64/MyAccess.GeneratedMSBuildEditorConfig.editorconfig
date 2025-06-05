@@ -9,7 +9,7 @@ build_property.EnforceExtendedAnalyzerRules =
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = MyAccess
 build_property.RootNamespace = MyAccess
-build_property.ProjectDir = E:\MyAccess\MyAccess\MyAccess\
+build_property.ProjectDir = C:\Programming\MyAccess\MyAccess\MyAccess\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.CsWinRTAotOptimizerEnabled = true
@@ -23,96 +23,96 @@ build_property.CsWinRTUseWindowsUIXamlProjections = false
 build_property.RazorLangVersion = 9.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = E:\MyAccess\MyAccess\MyAccess
+build_property.MSBuildProjectDirectory = C:\Programming\MyAccess\MyAccess\MyAccess
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 9.0
 build_property.EnableCodeStyleSeverity = 
 
-[E:/MyAccess/MyAccess/MyAccess/App.xaml]
+[C:/Programming/MyAccess/MyAccess/MyAccess/App.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = MyAccess.App.xaml
 build_metadata.AdditionalFiles.TargetPath = App.xaml
 build_metadata.AdditionalFiles.RelativePath = App.xaml
 build_metadata.AdditionalFiles.CssScope = 
 
-[E:/MyAccess/MyAccess/MyAccess/MainPage.xaml]
+[C:/Programming/MyAccess/MyAccess/MyAccess/MainPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = MyAccess.MainPage.xaml
 build_metadata.AdditionalFiles.TargetPath = MainPage.xaml
 build_metadata.AdditionalFiles.RelativePath = MainPage.xaml
 build_metadata.AdditionalFiles.CssScope = 
 
-[E:/MyAccess/MyAccess/MyAccess/Components/Routes.razor]
+[C:/Programming/MyAccess/MyAccess/MyAccess/Components/Routes.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xSb3V0ZXMucmF6b3I=
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[E:/MyAccess/MyAccess/MyAccess/Components/_Imports.razor]
+[C:/Programming/MyAccess/MyAccess/MyAccess/Components/_Imports.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xfSW1wb3J0cy5yYXpvcg==
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[E:/MyAccess/MyAccess/MyAccess/Components/Layout/MainLayout.razor]
+[C:/Programming/MyAccess/MyAccess/MyAccess/Components/Layout/MainLayout.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcTWFpbkxheW91dC5yYXpvcg==
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = b-qbd3563xh5
 
-[E:/MyAccess/MyAccess/MyAccess/Components/Layout/NavMenu.razor]
+[C:/Programming/MyAccess/MyAccess/MyAccess/Components/Layout/NavMenu.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcTmF2TWVudS5yYXpvcg==
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = b-r5hfr3ph7v
 
-[E:/MyAccess/MyAccess/MyAccess/Components/Pages/Access.razor]
+[C:/Programming/MyAccess/MyAccess/MyAccess/Components/Pages/Access.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBY2Nlc3MucmF6b3I=
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = b-jd1g95y300
 
-[E:/MyAccess/MyAccess/MyAccess/Components/Pages/ChartReport.razor]
+[C:/Programming/MyAccess/MyAccess/MyAccess/Components/Pages/ChartReport.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDaGFydFJlcG9ydC5yYXpvcg==
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = b-f4ih0v8x7s
 
-[E:/MyAccess/MyAccess/MyAccess/Components/Pages/Db.razor]
+[C:/Programming/MyAccess/MyAccess/MyAccess/Components/Pages/Db.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xEYi5yYXpvcg==
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = b-pp71ywrkqj
 
-[E:/MyAccess/MyAccess/MyAccess/Components/Pages/DetailedReport.razor]
+[C:/Programming/MyAccess/MyAccess/MyAccess/Components/Pages/DetailedReport.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xEZXRhaWxlZFJlcG9ydC5yYXpvcg==
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = b-ldnf2e5rq0
 
-[E:/MyAccess/MyAccess/MyAccess/Components/Pages/ReportPage.razor]
+[C:/Programming/MyAccess/MyAccess/MyAccess/Components/Pages/ReportPage.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xSZXBvcnRQYWdlLnJhem9y
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = b-7dgwquv5zz
 
-[E:/MyAccess/MyAccess/MyAccess/Components/Pages/SummaryReport.razor]
+[C:/Programming/MyAccess/MyAccess/MyAccess/Components/Pages/SummaryReport.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xTdW1tYXJ5UmVwb3J0LnJhem9y
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = b-2hdyo60oiv
 
-[E:/MyAccess/MyAccess/MyAccess/Components/Pages/TableData.razor]
+[C:/Programming/MyAccess/MyAccess/MyAccess/Components/Pages/TableData.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xUYWJsZURhdGEucmF6b3I=

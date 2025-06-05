@@ -58,7 +58,6 @@
                         {
                             <th>@GetColumnTranslation(key)</th>
                         }
-                        <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -69,10 +68,6 @@
                             {
                                 <td>@value?.ToString()</td>
                             }
-                            <td>
-                                <button class="edit-btn" @onclick="@(() => ShowEditRecordDialog(row))">✎</button>
-                                <button class="delete-btn" @onclick="@(() => DeleteRecord(row))">🗑</button>
-                            </td>
                         </tr>
                     }
                 </tbody>
@@ -108,45 +103,69 @@
                             }
                             else
                             {
-                                @switch(pgType)
+                                @if (foreignKeysInfo.Any(fk => fk.ColumnName == columnName))
                                 {
-                                    case "integer":
-                                        <input type="number"
-                                               value="@GetIntegerValue(columnName)"
-                                               @onchange="@(e => SetIntegerValue(columnName, e.Value))"
-                                               class="form-control"
-                                               step="1" />
-                                        break;
+                                    var fkInfo = foreignKeysInfo.First(fk => fk.ColumnName == columnName);
+                                    var refData = referenceData.GetValueOrDefault(columnName);
+                                    
+                                    <select class="form-control"
+                                            value="@GetForeignKeyValue(columnName)"
+                                            @onchange="@(e => SetForeignKeyValue(columnName, e.Value))">
+                                        <option value="">-- Выберите --</option>
+                                        @if (refData != null)
+                                        {
+                                            @foreach (var item in refData)
+                                            {
+                                                var keyValue = item[fkInfo.ReferencedColumn]?.ToString();
+                                                var displayValue = GetDisplayValue(item, fkInfo.ReferencedTable);
+                                                
+                                                <option value="@keyValue">@displayValue</option>
+                                            }
+                                        }
+                                    </select>
+                                }
+                                else
+                                {
+                                    @switch(pgType)
+                                    {
+                                        case "integer":
+                                            <input type="number"
+                                                   value="@GetIntegerValue(columnName)"
+                                                   @onchange="@(e => SetIntegerValue(columnName, e.Value))"
+                                                   class="form-control"
+                                                   step="1" />
+                                            break;
 
-                                    case "numeric":
-                                        <input type="number"
-                                               value="@GetDecimalValue(columnName)"
-                                               @onchange="@(e => SetDecimalValue(columnName, e.Value))"
-                                               class="form-control"
-                                               step="0.01" />
-                                        break;
+                                        case "numeric":
+                                            <input type="number"
+                                                   value="@GetDecimalValue(columnName)"
+                                                   @onchange="@(e => SetDecimalValue(columnName, e.Value))"
+                                                   class="form-control"
+                                                   step="0.01" />
+                                            break;
 
-                                    case "timestamp":
-                                    case "date":
-                                        <input type="datetime-local"
-                                               value="@GetDateTimeValue(columnName, pgType)?.ToString("yyyy-MM-ddTHH:mm")"
-                                               @onchange="@(e => SetDateTimeValue(columnName, e.Value, pgType))"
-                                               class="form-control" />
-                                        break;
+                                        case "timestamp":
+                                        case "date":
+                                            <input type="datetime-local"
+                                                   value="@GetDateTimeValue(columnName, pgType)?.ToString("yyyy-MM-ddTHH:mm")"
+                                                   @onchange="@(e => SetDateTimeValue(columnName, e.Value, pgType))"
+                                                   class="form-control" />
+                                            break;
 
-                                    case "boolean":
-                                        <input type="checkbox"
-                                               checked="@GetBooleanValue(columnName)"
-                                               @onchange="@(e => SetBooleanValue(columnName, e.Value))"
-                                               class="form-check" />
-                                        break;
+                                        case "boolean":
+                                            <input type="checkbox"
+                                                   checked="@GetBooleanValue(columnName)"
+                                                   @onchange="@(e => SetBooleanValue(columnName, e.Value))"
+                                                   class="form-check" />
+                                            break;
 
-                                    default:
-                                        <input type="text"
-                                               value="@GetStringValue(columnName)"
-                                               @oninput="@(e => SetStringValue(columnName, e.Value))"
-                                               class="form-control" />
-                                        break;
+                                        default:
+                                            <input type="text"
+                                                   value="@GetStringValue(columnName)"
+                                                   @oninput="@(e => SetStringValue(columnName, e.Value))"
+                                                   class="form-control" />
+                                            break;
+                                    }
                                 }
                             }
                         </div>
@@ -184,6 +203,57 @@
     private readonly ConcurrentDictionary<string, string> _translationCache = new();
     private bool showReportMenu = false;
     
+    private List<DatabaseService.ForeignKeyInfo> foreignKeysInfo = new();
+    private Dictionary<string, List<Dictionary<string, object>>> referenceData = new();
+
+    private string GetForeignKeyValue(string columnName)
+    {
+        return newRecord.TryGetValue(columnName, out var value) 
+            ? value?.ToString() 
+            : "";
+    }
+
+    private void SetForeignKeyValue(string columnName, object value)
+    {
+        newRecord[columnName] = value?.ToString();
+    }
+
+    private async Task LoadTableStructure()
+    {
+        tableColumns = await DbService.GetTableColumnsAsync(DbName, TableName);
+    }
+
+    private string GetDisplayValue(Dictionary<string, object> item, string tableName)
+    {
+        // Приоритетные колонки для отображения
+        var preferredColumns = new[] { "name", "title", "label", "description", "fullname" };
+        
+        foreach (var col in preferredColumns)
+        {
+            if (item.ContainsKey(col)) 
+                return item[col]?.ToString();
+        }
+        
+        // Любая колонка, содержащая "name" в названии
+        var nameColumn = item.Keys.FirstOrDefault(k => 
+            k.Contains("name", StringComparison.OrdinalIgnoreCase));
+        if (nameColumn != null) 
+            return item[nameColumn]?.ToString();
+        
+        // Любая не-ID колонка
+        var nonIdColumns = item.Keys
+            .Where(k => !k.EndsWith("_id") && !k.Equals("id"))
+            .ToList();
+        
+        if (nonIdColumns.Any())
+            return item[nonIdColumns.First()]?.ToString();
+        
+        // ID колонка как последний вариант
+        return item.ContainsKey("id") 
+            ? item["id"]?.ToString() 
+            : item.Values.FirstOrDefault()?.ToString();
+    }
+
     private enum ReportType
     {
         Summary,
@@ -206,7 +276,6 @@
     {
         return _translationCache.GetOrAdd(columnName, AutoTranslateColumn);
     }
-    
     
     private string AutoTranslateColumn(string columnName)
     {
@@ -233,7 +302,19 @@
             {"description", "Описание"},
             {"is", "Флаг"},
             {"num", "Номер"},
-            {"text", "Текст"}
+            {"text", "Текст"},
+            {"Tariff", "Тариф"},
+            {"Minutes", "Минуты"},
+            {"Internet", "Интернет"},
+            {"gb", "гб"},
+            {"Contract", "Контракт"},
+            {"operator", "Оператор"},
+            {"client", "Клиент"},
+            {"last", "Последнее"},
+            {"phone", "Телефон"},
+            {"country","Страна"},
+            {"call", "Звонок"},
+            {"duration", "Длительность"}
         };
         
         var words = cleanName.Split(' ');
@@ -253,11 +334,7 @@
     {
         await LoadTableData();
         await LoadTableStructure();
-    }
-
-    private async Task LoadTableStructure()
-    {
-        tableColumns = await DbService.GetTableColumnsAsync(DbName, TableName);
+        await LoadForeignKeysInfo();
     }
 
     private async Task LoadTableData()
@@ -265,12 +342,53 @@
         rows = await DbService.GetTableDataAsync(DbName, TableName);
     }
 
-    private void ShowAddRecordDialog()
+    private async Task LoadForeignKeysInfo()
+    {
+        try
+        {
+            foreignKeysInfo = await DbService.GetForeignKeysAsync(DbName, TableName);
+            referenceData = await DbService.GetReferenceDataAsync(DbName, foreignKeysInfo);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка загрузки внешних ключей: {ex.Message}");
+            foreignKeysInfo = new List<DatabaseService.ForeignKeyInfo>();
+            referenceData = new Dictionary<string, List<Dictionary<string, object>>>();
+        }
+    }
+
+    private async void ShowAddRecordDialog()
     {
         newRecord.Clear();
         errorMessage = "";
         showAddDialog = true;
         isEditing = false;
+    }
+
+    private async void ShowEditRecordDialog(Dictionary<string, object> row)
+    {
+        newRecord.Clear();
+        isEditing = true;
+        errorMessage = "";
+
+        var primaryKeyNames = tableColumns
+            .Where(c => c.IsPrimaryKey)
+            .Select(c => c.Name)
+            .ToHashSet();
+
+        foreach (var kvp in row)
+        {
+            if (!primaryKeyNames.Contains(kvp.Key))
+            {
+                newRecord[kvp.Key] = kvp.Value;
+            }
+        }
+
+        editPrimaryKeys = tableColumns
+            .Where(c => c.IsPrimaryKey)
+            .ToDictionary(c => c.Name, c => row[c.Name]);
+
+        showAddDialog = true;
     }
 
     private void CloseAddDialog()
@@ -303,32 +421,6 @@
         {
             errorMessage = $"Ошибка удаления: {ex.Message}";
         }
-    }
-
-    private void ShowEditRecordDialog(Dictionary<string, object> row)
-    {
-        newRecord.Clear();
-        isEditing = true;
-        errorMessage = "";
-
-        var primaryKeyNames = tableColumns
-            .Where(c => c.IsPrimaryKey)
-            .Select(c => c.Name)
-            .ToHashSet();
-
-        foreach (var kvp in row)
-        {
-            if (!primaryKeyNames.Contains(kvp.Key))
-            {
-                newRecord[kvp.Key] = kvp.Value;
-            }
-        }
-
-        editPrimaryKeys = tableColumns
-            .Where(c => c.IsPrimaryKey)
-            .ToDictionary(c => c.Name, c => row[c.Name]);
-
-        showAddDialog = true;
     }
 
     private async Task SaveRecord()

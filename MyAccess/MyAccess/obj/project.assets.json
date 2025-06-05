@@ -4639,25 +4639,24 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\artur\\.nuget\\packages\\": {},
-    "D:\\VisualStudio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\0\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\MyAccess\\MyAccess\\MyAccess\\MyAccess.csproj",
+      "projectUniqueName": "C:\\Programming\\MyAccess\\MyAccess\\MyAccess\\MyAccess.csproj",
       "projectName": "MyAccess",
-      "projectPath": "E:\\MyAccess\\MyAccess\\MyAccess\\MyAccess.csproj",
-      "packagesPath": "C:\\Users\\artur\\.nuget\\packages\\",
-      "outputPath": "E:\\MyAccess\\MyAccess\\MyAccess\\obj\\",
+      "projectPath": "C:\\Programming\\MyAccess\\MyAccess\\MyAccess\\MyAccess.csproj",
+      "packagesPath": "C:\\Users\\0\\.nuget\\packages\\",
+      "outputPath": "C:\\Programming\\MyAccess\\MyAccess\\MyAccess\\obj\\",
       "projectStyle": "PackageReference",
       "crossTargeting": true,
-      "UsingMicrosoftNETSdk": false,
       "fallbackFolders": [
-        "D:\\VisualStudio\\Shared\\NuGetPackages"
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\artur\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\0\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -4743,7 +4742,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.202\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200\\RuntimeIdentifierGraph.json"
       }
     },
     "runtimes": {

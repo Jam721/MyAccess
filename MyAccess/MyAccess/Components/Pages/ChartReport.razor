@@ -1,6 +1,9 @@
-﻿@using System.Text.Json
+﻿@using System.Collections.Concurrent
+@using System.Globalization
+@using System.Text.Json
 @using MyAccess.Services
 @using System.Linq
+@using System.Text.RegularExpressions
 @inject IJSRuntime JSRuntime
 @inject PdfReportService PdfService
 
@@ -32,7 +35,7 @@
                     {
                         @foreach (var column in Columns)
                         {
-                            <option value="@column.Name">@column.Name</option>
+                            <option value="@column.Name">@GetColumnTranslation(column.Name)</option>
                         }
                     }
                     else
@@ -50,7 +53,7 @@
                     {
                         @foreach (var column in Columns)
                         {
-                            <option value="@column.Name">@column.Name</option>
+                            <option value="@column.Name">@GetColumnTranslation(column.Name)</option>
                         }
                     }
                 </select>
@@ -78,7 +81,10 @@
                 <i class="fas fa-sync-alt"></i> Обновить
             </button>
             <button class="btn-export" @onclick="ExportChart">
-                <i class="fas fa-download"></i> Экспорт
+                <i class="fas fa-download"></i> Экспорт графика
+            </button>
+            <button class="btn-export" @onclick="ExportToPdf">
+                <i class="fas fa-file-pdf"></i> Экспорт в PDF
             </button>
         </div>
     </div>
@@ -159,18 +165,6 @@
             <div class="summary-label">Среднее</div>
         </div>
     </div>
-
-    <div class="action-buttons">
-        <button class="btn-refresh" @onclick="UpdateChartData">
-            <i class="fas fa-sync-alt"></i> Обновить
-        </button>
-        <button class="btn-export" @onclick="ExportChart">
-            <i class="fas fa-download"></i> Экспорт графика
-        </button>
-        <button class="btn-export-pdf" @onclick="ExportToPdf">
-            <i class="fas fa-file-pdf"></i> Экспорт в PDF
-        </button>
-    </div>
 </div>
 
 @code {
@@ -196,9 +190,71 @@
     private decimal otherGroupsValue;
     private bool hasMoreGroups;
     private bool isLoading;
+    
+    
 
     // Для работы с графиком
     private string chartCanvasId = $"chart_{Guid.NewGuid().ToString("N")}";
+    
+    private readonly ConcurrentDictionary<string, string> _translationCache = new();
+    
+    private string AutoTranslateColumn(string columnName)
+    {
+        var cleanName = Regex.Replace(columnName, "[^a-zA-Zа-яА-Я0-9]", " ");
+        cleanName = Regex.Replace(cleanName, "([a-zа-я])([A-ZА-Я])", "$1 $2");
+        cleanName = cleanName.Replace("_", " ");
+        
+        var dictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            {"id", "ИД"},
+            {"name", "Имя"},
+            {"date", "Дата"},
+            {"time", "Время"},
+            {"count", "Количество"},
+            {"price", "Цена"},
+            {"total", "Итого"},
+            {"sum", "Сумма"},
+            {"amount", "Сумма"},
+            {"created", "Создано"},
+            {"modified", "Изменено"},
+            {"status", "Статус"},
+            {"type", "Тип"},
+            {"desc", "Описание"},
+            {"description", "Описание"},
+            {"is", "Флаг"},
+            {"num", "Номер"},
+            {"text", "Текст"},
+            {"Tariff", "Тариф"},
+            {"Minutes", "Минуты"},
+            {"Internet", "Интернет"},
+            {"gb", "гб"},
+            {"Contract", "Контракт"},
+            {"operator", "Оператор"},
+            {"client", "Клиент"},
+            {"last", "Последнее"},
+            {"phone", "Телефон"},
+            {"country","Страна"},
+            {"call", "Звонок"},
+            {"duration", "Длительность"}
+        };
+        
+        var words = cleanName.Split(' ');
+        for (int i = 0; i < words.Length; i++)
+        {
+            if (dictionary.TryGetValue(words[i], out var translation))
+            {
+                words[i] = translation;
+            }
+        }
+        
+        string result = string.Join(" ", words);
+        return CultureInfo.CurrentCulture.TextInfo.ToTitleCase(result.ToLower());
+    }
+    
+    private string GetColumnTranslation(string columnName)
+    {
+        return _translationCache.GetOrAdd(columnName, AutoTranslateColumn);
+    }
     
     private async Task ExportToPdf()
     {
